@@ -18,8 +18,9 @@ export const performLegalReview = async (formData: any, type: string): Promise<A
   Retorne obrigatoriamente um JSON puro.`;
 
   try {
+    // Fix: Updated model to 'gemini-3-pro-preview' for complex text reasoning and used propertyOrdering in responseSchema
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-pro-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -30,7 +31,7 @@ export const performLegalReview = async (formData: any, type: string): Promise<A
             inconsistencies: { type: Type.ARRAY, items: { type: Type.STRING } },
             recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
           },
-          required: ["missingFields", "inconsistencies", "recommendations"]
+          propertyOrdering: ["missingFields", "inconsistencies", "recommendations"]
         }
       }
     });

@@ -11,12 +11,24 @@
       body {
         font-family: 'Inter', sans-serif;
         background-color: #f8fafc;
+        overflow-x: hidden;
       }
       .font-contract {
         font-family: 'Montserrat', sans-serif;
       }
-      .pdf-shadow {
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      /* Custom Scrollbar for better density */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #cbd5e1;
       }
       
       @media print {
@@ -42,14 +54,6 @@
           overflow: visible !important;
           background-color: white !important;
           width: 100% !important;
-        }
-        .pdf-content-container {
-          box-shadow: none !important;
-          margin: 0 !important;
-          padding: 2cm !important;
-          width: 100% !important;
-          transform: none !important;
-          min-height: auto !important;
         }
       }
     </style>
