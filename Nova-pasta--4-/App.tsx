@@ -7,7 +7,7 @@ import Home from './components/Home.tsx';
 import Finances from './components/Finances.tsx';
 import Clients from './components/Clients.tsx';
 import { ContractType, HistoryItem, User, Client } from './types.ts';
-import { Scale, LogOut, Bell, LayoutGrid } from 'lucide-react';
+import { Scale, LogOut, LayoutGrid, Users, Wallet, FileEdit } from 'lucide-react';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -16,30 +16,15 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
 
-  // Carregar sessão e histórico inicial do localStorage
   useEffect(() => {
     const savedUser = localStorage.getItem('lawyer_editor_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    if (savedUser) setUser(JSON.parse(savedUser));
 
     const savedHistory = localStorage.getItem('lawyer_editor_history');
-    if (savedHistory) {
-      try {
-        setHistory(JSON.parse(savedHistory));
-      } catch (e) {
-        console.error("Erro ao carregar histórico", e);
-      }
-    }
+    if (savedHistory) setHistory(JSON.parse(savedHistory));
 
     const savedClients = localStorage.getItem('lawyer_editor_clients');
-    if (savedClients) {
-      try {
-        setClients(JSON.parse(savedClients));
-      } catch (e) {
-        console.error("Erro ao carregar clientes", e);
-      }
-    }
+    if (savedClients) setClients(JSON.parse(savedClients));
   }, []);
 
   const handleLogin = (newUser: User) => {
@@ -64,29 +49,19 @@ const App: React.FC = () => {
     setSelectedType(null);
   };
 
-  const handleSelectModule = (module: 'EDITOR' | 'FINANCES' | 'CLIENTS') => {
-    if (module === 'EDITOR') setCurrentView('DASHBOARD_EDITOR');
-    else if (module === 'CLIENTS') setCurrentView('CLIENTS');
-    else setCurrentView('FINANCES');
-  };
-
   const addToHistory = (item: Omit<HistoryItem, 'id' | 'date'>) => {
     const newItem: HistoryItem = {
       ...item,
       id: Date.now().toString(),
       date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     };
-    
     const updatedHistory = [newItem, ...history].slice(0, 50);
     setHistory(updatedHistory);
     localStorage.setItem('lawyer_editor_history', JSON.stringify(updatedHistory));
   };
 
   const handleValidateClient = (newClient: Client) => {
-    const updatedClients = [
-      { ...newClient, paymentHistory: [] }, // Inicializa histórico de pagamento
-      ...clients
-    ];
+    const updatedClients = [{ ...newClient, paymentHistory: [] }, ...clients];
     setClients(updatedClients);
     localStorage.setItem('lawyer_editor_clients', JSON.stringify(updatedClients));
   };
@@ -103,90 +78,75 @@ const App: React.FC = () => {
     localStorage.setItem('lawyer_editor_clients', JSON.stringify(updatedClients));
   };
 
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
+  if (!user) return <Login onLogin={handleLogin} />;
 
-  if (currentView === 'CLIENTS') {
-    return <Clients 
-      user={user} 
-      clients={clients} 
-      history={history} 
-      onBack={handleBackToHub} 
-      onValidateClient={handleValidateClient}
-      onRemoveClient={handleRemoveClient}
-    />;
-  }
-
-  if (currentView === 'FINANCES') {
-    return <Finances 
-      user={user} 
-      clients={clients} 
-      onBack={handleBackToHub} 
-      onUpdateClient={handleUpdateClient}
-    />;
-  }
-
-  if (currentView === 'EDITOR_SCREEN' && selectedType) {
-    return <Editor type={selectedType} onBack={() => setCurrentView('DASHBOARD_EDITOR')} onSaveToHistory={addToHistory} />;
-  }
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'CLIENTS': return <Clients user={user} clients={clients} history={history} onBack={handleBackToHub} onValidateClient={handleValidateClient} onRemoveClient={handleRemoveClient} />;
+      case 'FINANCES': return <Finances user={user} clients={clients} onBack={handleBackToHub} onUpdateClient={handleUpdateClient} />;
+      case 'EDITOR_SCREEN': return selectedType ? <Editor type={selectedType} onBack={() => setCurrentView('DASHBOARD_EDITOR')} onSaveToHistory={addToHistory} /> : null;
+      case 'DASHBOARD_EDITOR': return <Dashboard onStartContract={handleStartContract} history={history} />;
+      default: return <Home user={user} clients={clients} onSelectModule={(m) => {
+        if (m === 'EDITOR') setCurrentView('DASHBOARD_EDITOR');
+        else if (m === 'CLIENTS') setCurrentView('CLIENTS');
+        else setCurrentView('FINANCES');
+      }} />;
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
-      <nav className="bg-white border-b px-8 py-3 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen flex flex-col bg-gray-50 font-sans pb-20 md:pb-0">
+      {/* Desktop Top Nav */}
+      <nav className="hidden md:flex bg-white border-b px-8 py-3 items-center justify-between sticky top-0 z-50 shadow-sm">
         <div className="flex items-center space-x-3 cursor-pointer" onClick={handleBackToHub}>
           <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
              <Scale className="w-6 h-6 text-[#9c7d2c]" />
           </div>
-          <span className="text-xl font-black tracking-tight text-gray-900">
-            Lawyer <span className="text-[#9c7d2c]">Pro</span>
-          </span>
+          <span className="text-xl font-black tracking-tight text-gray-900">Lawyer <span className="text-[#9c7d2c]">Pro</span></span>
         </div>
-        
         <div className="flex items-center space-x-6">
-          {currentView !== 'HOME' && (
-            <button 
-              onClick={handleBackToHub}
-              className="text-gray-500 hover:text-black font-bold text-xs uppercase tracking-widest flex items-center space-x-2 transition-colors"
-            >
-              <LayoutGrid className="w-4 h-4" />
-              <span>Início</span>
-            </button>
-          )}
-
-          <div className="flex items-center space-x-3 pl-6 border-l">
-            <div className="text-right">
-              <p className="text-sm font-bold text-gray-800 leading-none">{user.user_metadata?.full_name || user.email.split('@')[0]}</p>
-              <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">
-                {user.role === 'ADVOGADO' ? 'Advogado Premium' : 'Colaborador'}
-              </p>
-            </div>
-            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 overflow-hidden border border-gray-100 shadow-inner">
-              <img 
-                src={user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`} 
-                alt="Profile" 
-                className="w-full h-full object-cover" 
-              />
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+          <div className="text-right">
+            <p className="text-sm font-bold text-gray-800">{user.user_metadata?.full_name || 'Usuário'}</p>
+            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{user.role}</p>
           </div>
+          <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-500 transition-all"><LogOut className="w-5 h-5" /></button>
         </div>
       </nav>
 
+      {/* Mobile Top Header (Condensed) */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b sticky top-0 z-50">
+        <div className="flex items-center space-x-2" onClick={handleBackToHub}>
+          <Scale className="w-6 h-6 text-[#9c7d2c]" />
+          <span className="font-black text-sm tracking-tight">Lawyer <span className="text-[#9c7d2c]">Pro</span></span>
+        </div>
+        <button onClick={handleLogout} className="text-gray-400"><LogOut className="w-5 h-5" /></button>
+      </div>
+
       <main className="flex-1 overflow-y-auto">
-        {currentView === 'HOME' ? (
-          <Home user={user} clients={clients} onSelectModule={handleSelectModule} />
-        ) : (
-          <Dashboard onStartContract={handleStartContract} history={history} />
-        )}
+        {renderCurrentView()}
       </main>
 
-      <footer className="bg-white border-t py-6 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest">
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around items-center h-16 px-2 z-[100] shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <button onClick={() => setCurrentView('HOME')} className={`flex flex-col items-center flex-1 ${currentView === 'HOME' ? 'text-[#9c7d2c]' : 'text-gray-400'}`}>
+          <LayoutGrid className="w-5 h-5" />
+          <span className="text-[9px] font-black uppercase mt-1">Início</span>
+        </button>
+        <button onClick={() => setCurrentView('DASHBOARD_EDITOR')} className={`flex flex-col items-center flex-1 ${currentView === 'DASHBOARD_EDITOR' || currentView === 'EDITOR_SCREEN' ? 'text-[#9c7d2c]' : 'text-gray-400'}`}>
+          <FileEdit className="w-5 h-5" />
+          <span className="text-[9px] font-black uppercase mt-1">Editor</span>
+        </button>
+        <button onClick={() => setCurrentView('CLIENTS')} className={`flex flex-col items-center flex-1 ${currentView === 'CLIENTS' ? 'text-[#9c7d2c]' : 'text-gray-400'}`}>
+          <Users className="w-5 h-5" />
+          <span className="text-[9px] font-black uppercase mt-1">Clientes</span>
+        </button>
+        <button onClick={() => setCurrentView('FINANCES')} className={`flex flex-col items-center flex-1 ${currentView === 'FINANCES' ? 'text-[#9c7d2c]' : 'text-gray-400'}`}>
+          <Wallet className="w-5 h-5" />
+          <span className="text-[9px] font-black uppercase mt-1">Finanças</span>
+        </button>
+      </nav>
+
+      <footer className="hidden md:block bg-white border-t py-6 text-center text-gray-400 text-[10px] font-bold uppercase tracking-widest">
         &copy; 2024 Lawyer Pro • Legal Technology Solutions
       </footer>
     </div>
