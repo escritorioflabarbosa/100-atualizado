@@ -14,9 +14,7 @@ interface EditorProps {
 const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
   const [zoom, setZoom] = useState(100);
   const [activeTab, setActiveTab] = useState(0); 
-  const [isManualEditing, setIsManualEditing] = useState(false);
   const [mobileView, setMobileView] = useState<'FORM' | 'PREVIEW'>('FORM');
-  const [manualOverrides, setManualOverrides] = useState<Record<number, string>>({});
 
   const [formDataPF, setFormDataPF] = useState<FormDataPF>({
     nome: '', estadoCivil: '', profissao: '', nacionalidade: '', cpf: '', rua: '', complemento: '', cep: '',
@@ -79,118 +77,115 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
     onSaveToHistory({
       client: type === 'PF_BUNDLE' ? formDataPF.nome : type === 'PJ_BUNDLE' ? formDataPJ.razaoSocial : formDataPartnership.gestor,
       document: type === 'PF_BUNDLE' ? formDataPF.cpf : type === 'PJ_BUNDLE' ? formDataPJ.cnpj : '',
-      type: 'Gerado via Mobile Editor',
+      type: 'Contrato Gerado',
       fullData: type === 'PF_BUNDLE' ? formDataPF : type === 'PJ_BUNDLE' ? formDataPJ : formDataPartnership
     });
     window.print();
   };
 
-  const renderPaymentSchedule = () => {
-    const currentData = type === 'PF_BUNDLE' ? formDataPF : formDataPJ;
-    const installments = parseInt(currentData.vezesParcelas) || 0;
-    if (!currentData.valorTotal) return null;
-
-    return (
-      <div className="mt-6 p-4 md:p-6 bg-gray-900 rounded-[2rem] text-white shadow-xl overflow-hidden relative">
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-[#9c7d2c] mb-4 flex items-center">
-          <ReceiptText className="w-4 h-4 mr-2" /> Cronograma Financeiro
-        </h4>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center border-b border-white/10 pb-2">
-            <span className="text-[10px] font-bold uppercase text-gray-400">Total</span>
-            <span className="text-sm font-black text-[#9c7d2c]">R$ {currentData.valorTotal}</span>
-          </div>
-          {installments > 0 && <p className="text-[10px] text-white/50">{installments}x de R$ {currentData.valorParcela} todo dia {currentData.dataPagamentoParcelas || '??'}</p>}
+  const renderFormPJ = () => (
+    <div className="space-y-14">
+      <div className="space-y-7">
+        <h3 className="text-xs font-black text-[#9c7d2c] uppercase flex items-center tracking-widest"><Building2 className="w-5 h-5 mr-3" /> Empresa Outorgante</h3>
+        <div className="space-y-5">
+          <input type="text" placeholder="Razão Social" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPJ.razaoSocial} onChange={e => setFormDataPJ({...formDataPJ, razaoSocial: e.target.value})} />
+          <input type="text" placeholder="CNPJ" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPJ.cnpj} onChange={e => setFormDataPJ({...formDataPJ, cnpj: e.target.value})} />
+          <input type="text" placeholder="Endereço da Sede" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPJ.enderecoSede} onChange={e => setFormDataPJ({...formDataPJ, enderecoSede: e.target.value})} />
         </div>
       </div>
-    );
-  };
+      <div className="space-y-7 pt-10 border-t-2 border-gray-50">
+        <h3 className="text-xs font-black text-[#9c7d2c] uppercase flex items-center tracking-widest"><User className="w-5 h-5 mr-3" /> Representante Legal</h3>
+        <input type="text" placeholder="Nome do Representante" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPJ.nomeRepresentante} onChange={e => setFormDataPJ({...formDataPJ, nomeRepresentante: e.target.value})} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <input type="text" placeholder="CPF" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPJ.cpfRep} onChange={e => setFormDataPJ({...formDataPJ, cpfRep: e.target.value})} />
+          <input type="text" placeholder="Profissão" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPJ.profissaoRep} onChange={e => setFormDataPJ({...formDataPJ, profissaoRep: e.target.value})} />
+        </div>
+      </div>
+      <div className="space-y-7 pt-10 border-t-2 border-gray-50">
+        <h3 className="text-xs font-black text-[#9c7d2c] uppercase tracking-widest">Financeiro</h3>
+        <input type="text" placeholder="Valor Total" className="w-full p-5 border-2 border-gray-100 rounded-[1.5rem] text-base font-black" value={formDataPJ.valorTotal} onChange={e => handleCurrencyChange('valorTotal', e.target.value)} />
+      </div>
+    </div>
+  );
 
   const renderFormPF = () => (
-    <div className="space-y-6">
-      <div className="space-y-3">
-        <h3 className="text-xs font-black text-[#9c7d2c] uppercase">Dados do Cliente</h3>
-        <input type="text" placeholder="Nome Completo" className="w-full p-3.5 border rounded-2xl text-sm" value={formDataPF.nome} onChange={e => setFormDataPF({...formDataPF, nome: e.target.value})} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input type="text" placeholder="CPF" className="w-full p-3.5 border rounded-2xl text-sm" value={formDataPF.cpf} onChange={e => setFormDataPF({...formDataPF, cpf: e.target.value})} />
-          <input type="text" placeholder="Profissão" className="w-full p-3.5 border rounded-2xl text-sm" value={formDataPF.profissao} onChange={e => setFormDataPF({...formDataPF, profissao: e.target.value})} />
+    <div className="space-y-14">
+      <div className="space-y-7">
+        <h3 className="text-xs font-black text-[#9c7d2c] uppercase flex items-center tracking-widest"><User className="w-5 h-5 mr-3" /> Dados Pessoais</h3>
+        <div className="space-y-5">
+           <input type="text" placeholder="Nome Completo" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm shadow-sm" value={formDataPF.nome} onChange={e => setFormDataPF({...formDataPF, nome: e.target.value})} />
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <input type="text" placeholder="CPF" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPF.cpf} onChange={e => setFormDataPF({...formDataPF, cpf: e.target.value})} />
+             <input type="text" placeholder="Profissão" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPF.profissao} onChange={e => setFormDataPF({...formDataPF, profissao: e.target.value})} />
+           </div>
+           <input type="text" placeholder="Endereço Residencial" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPF.rua} onChange={e => setFormDataPF({...formDataPF, rua: e.target.value})} />
+           <input type="text" placeholder="Complemento / Bairro" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPF.complemento} onChange={e => setFormDataPF({...formDataPF, complemento: e.target.value})} />
+           <input type="text" placeholder="CEP" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPF.cep} onChange={e => setFormDataPF({...formDataPF, cep: e.target.value})} />
         </div>
       </div>
-      <div className="space-y-3 pt-4 border-t">
-        <h3 className="text-xs font-black text-[#9c7d2c] uppercase">Financeiro</h3>
-        <input type="text" placeholder="Valor Total" className="w-full p-3.5 border rounded-2xl text-sm font-bold" value={formDataPF.valorTotal} onChange={e => handleCurrencyChange('valorTotal', e.target.value)} />
-        <div className="grid grid-cols-2 gap-3">
-          <input type="date" className="w-full p-3.5 border rounded-2xl text-sm" value={formDataPF.dataEntrada} onChange={e => setFormDataPF({...formDataPF, dataEntrada: e.target.value})} />
-          <input type="text" placeholder="Entrada" className="w-full p-3.5 border rounded-2xl text-sm" value={formDataPF.entrada} onChange={e => handleCurrencyChange('entrada', e.target.value)} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <input type="number" placeholder="Nº Parcelas" className="w-full p-3.5 border rounded-2xl text-sm" value={formDataPF.vezesParcelas} onChange={e => setFormDataPF({...formDataPF, vezesParcelas: e.target.value})} />
-          <input type="text" placeholder="Dia Venc." className="w-full p-3.5 border rounded-2xl text-sm" value={formDataPF.dataPagamentoParcelas} onChange={e => setFormDataPF({...formDataPF, dataPagamentoParcelas: e.target.value})} />
+      <div className="space-y-7 pt-10 border-t-2 border-gray-50">
+        <h3 className="text-xs font-black text-[#9c7d2c] uppercase flex items-center tracking-widest"><ReceiptText className="w-5 h-5 mr-3" /> Honorários</h3>
+        <div className="space-y-6">
+          <input type="text" placeholder="Valor Global (R$ 0,00)" className="w-full p-5 border-2 border-gray-200 rounded-[2rem] text-lg font-black" value={formDataPF.valorTotal} onChange={e => handleCurrencyChange('valorTotal', e.target.value)} />
+          <div className="grid grid-cols-2 gap-6">
+             <input type="date" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPF.dataEntrada} onChange={e => setFormDataPF({...formDataPF, dataEntrada: e.target.value})} />
+             <input type="text" placeholder="Valor Sinal" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPF.entrada} onChange={e => handleCurrencyChange('entrada', e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+            <input type="number" placeholder="Nº de Parcelas" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPF.vezesParcelas} onChange={e => setFormDataPF({...formDataPF, vezesParcelas: e.target.value})} />
+            <input type="text" placeholder="Dia Vencimento" className="w-full p-4.5 border-2 border-gray-100 rounded-[1.5rem] text-sm" value={formDataPF.dataPagamentoParcelas} onChange={e => setFormDataPF({...formDataPF, dataPagamentoParcelas: e.target.value})} />
+          </div>
         </div>
       </div>
-      {renderPaymentSchedule()}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col pb-24 md:pb-0">
-      <header className="bg-white border-b px-4 md:px-8 py-3 flex items-center justify-between sticky top-0 z-[60] print:hidden">
-        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5" /></button>
-        <div className="hidden md:flex items-center space-x-3 bg-gray-100 p-1 rounded-xl">
-           <button onClick={() => setZoom(Math.max(50, zoom - 10))} className="p-1.5 hover:bg-white rounded-lg"><ZoomOut className="w-4 h-4" /></button>
-           <span className="text-xs font-black px-2">{zoom}%</span>
-           <button onClick={() => setZoom(Math.min(200, zoom + 10))} className="p-1.5 hover:bg-white rounded-lg"><ZoomIn className="w-4 h-4" /></button>
-        </div>
-        <button onClick={handleGeneratePDF} className="bg-black text-white px-5 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg flex items-center">
-          <Download className="w-4 h-4 mr-2 text-[#9c7d2c]" /> PDF
+    <div className="min-h-screen bg-gray-50 flex flex-col pb-32 md:pb-0 font-sans">
+      <header className="bg-white border-b px-4 md:px-8 py-5 flex items-center justify-between sticky top-0 z-[60] print:hidden shadow-sm">
+        <button onClick={onBack} className="p-3 hover:bg-gray-100 rounded-full transition-colors"><ArrowLeft className="w-6 h-6 text-gray-600" /></button>
+        <button onClick={handleGeneratePDF} className="bg-black text-white px-8 py-3 rounded-[1.5rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl flex items-center hover:bg-gray-800 active:scale-95 transition-all">
+          <Download className="w-4 h-4 mr-2 text-[#9c7d2c]" /> Gerar PDF
         </button>
       </header>
 
       <div className="flex flex-1 overflow-hidden relative print:overflow-visible">
-        {/* Sidebar / Form View */}
-        <aside className={`${mobileView === 'FORM' ? 'block' : 'hidden'} md:block w-full md:w-[450px] border-r bg-white overflow-y-auto p-6 md:p-8 scrollbar-none shadow-xl z-10`}>
-          {type === 'PF_BUNDLE' ? renderFormPF() : <div className="p-10 text-center text-gray-400">Modelo PJ em adaptação mobile</div>}
-          
-          <div className="md:hidden mt-10">
-            <button onClick={() => setMobileView('PREVIEW')} className="w-full py-4 bg-[#9c7d2c] text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center">
-              <Eye className="w-5 h-5 mr-2" /> Ver Prévia do Contrato
+        <aside className={`${mobileView === 'FORM' ? 'block' : 'hidden'} md:block w-full md:w-[500px] border-r bg-white overflow-y-auto p-8 md:p-12 scrollbar-none shadow-2xl z-10`}>
+          {type === 'PF_BUNDLE' ? renderFormPF() : type === 'PJ_BUNDLE' ? renderFormPJ() : <div className="p-10 text-center text-gray-400">Modelo indisponível</div>}
+          <div className="md:hidden mt-16 pb-12">
+            <button onClick={() => setMobileView('PREVIEW')} className="w-full py-5 bg-[#9c7d2c] text-white rounded-[2.5rem] font-black text-xs uppercase tracking-[0.1em] shadow-2xl flex items-center justify-center active:scale-95 transition-all">
+              <Eye className="w-5 h-5 mr-3" /> Visualizar Contrato
             </button>
           </div>
         </aside>
 
-        {/* Main Content / PDF Preview View */}
-        <main className={`${mobileView === 'PREVIEW' ? 'block' : 'hidden'} md:flex flex-1 bg-gray-100/30 overflow-y-auto p-4 md:p-12 flex-col items-center print:bg-white print:p-0`}>
-          <div className="md:hidden mb-6 flex justify-between w-full">
-             <button onClick={() => setMobileView('FORM')} className="flex items-center text-[#9c7d2c] font-black text-[10px] uppercase tracking-widest">
-                <ArrowLeft className="w-4 h-4 mr-1" /> Editar Dados
+        <main className={`${mobileView === 'PREVIEW' ? 'flex' : 'hidden md:flex'} flex-1 bg-gray-100/40 overflow-y-auto p-4 md:p-12 flex-col items-center print:bg-white print:p-0`}>
+          <div className="md:hidden mb-10 flex justify-between w-full items-center">
+             <button onClick={() => setMobileView('FORM')} className="flex items-center text-black font-black text-[10px] uppercase tracking-widest bg-white px-5 py-3 rounded-2xl shadow-xl border-2 border-gray-50">
+                <ArrowLeft className="w-4 h-4 mr-2 text-[#9c7d2c]" /> Editar Dados
              </button>
-             <span className="font-black text-[10px] uppercase text-gray-400">Página {activeTab + 1} de 3</span>
+             <span className="font-black text-[9px] uppercase text-gray-400">Contrato • Pág. {activeTab + 1}/2</span>
           </div>
-
-          {(type === 'PF_BUNDLE' || type === 'PJ_BUNDLE') && (
-            <div className="mb-8 bg-white p-1 rounded-2xl border flex items-center shadow-sm w-full max-w-sm md:max-w-none overflow-x-auto">
-              {['Honorários', 'Procuração', 'Hipo'].map((tab, idx) => (
-                <button key={tab} onClick={() => setActiveTab(idx)} className={`flex-1 min-w-[100px] px-4 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all ${activeTab === idx ? 'bg-black text-white' : 'text-gray-400'}`}>
-                  {tab}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="w-full flex justify-center pb-20 md:pb-0">
+          <div className="mb-12 bg-white p-1.5 rounded-[2rem] border-2 border-gray-100 flex items-center shadow-xl w-full max-w-sm md:max-w-none overflow-x-auto print:hidden">
+            {['Honorários', 'Procuração', 'Hipo'].map((tab, idx) => (
+              <button key={tab} onClick={() => setActiveTab(idx)} className={`flex-1 min-w-[120px] px-8 py-4 rounded-[1.5rem] text-[10px] font-black uppercase transition-all tracking-widest ${activeTab === idx ? 'bg-black text-white shadow-2xl' : 'text-gray-400 hover:bg-gray-50'}`}>
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="w-full flex justify-center items-start pb-40 md:pb-12">
              <PDFPreview 
-                type={activeTab === 0 ? 'PF_HONORARIOS' : activeTab === 1 ? 'PF_PROCURACAO' : 'PF_HIPO'} 
-                data={formDataPF} 
+                type={activeTab === 0 ? (type === 'PJ_BUNDLE' ? 'PJ_HONORARIOS' : 'PF_HONORARIOS') : activeTab === 1 ? (type === 'PJ_BUNDLE' ? 'PJ_PROCURACAO' : 'PF_PROCURACAO') : 'PF_HIPO'} 
+                data={type === 'PF_BUNDLE' ? formDataPF : formDataPJ} 
                 zoom={zoom} 
              />
           </div>
         </main>
       </div>
 
-      {/* Floating Mobile Action */}
       {mobileView === 'PREVIEW' && (
-        <button onClick={() => setMobileView('FORM')} className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-black rounded-full flex items-center justify-center text-white shadow-2xl z-[110] active:scale-95 transition-transform border-4 border-white">
-          <Edit3 className="w-6 h-6 text-[#9c7d2c]" />
+        <button onClick={() => setMobileView('FORM')} className="md:hidden fixed bottom-28 right-8 w-20 h-20 bg-black rounded-full flex items-center justify-center text-white shadow-[0_15px_50px_rgba(0,0,0,0.4)] z-[110] active:scale-95 transition-transform border-8 border-white">
+          <Edit3 className="w-8 h-8 text-[#9c7d2c]" />
         </button>
       )}
     </div>
