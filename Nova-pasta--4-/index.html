@@ -10,92 +10,114 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #f3f4f6; /* Fundo cinza claro para o editor */
+        background-color: #525659; /* Fundo cinza escuro estilo Adobe Reader */
         overflow-x: hidden;
       }
       .font-contract {
         font-family: 'Montserrat', sans-serif;
       }
-      /* Custom Scrollbar for better density */
+      /* Custom Scrollbar */
       ::-webkit-scrollbar {
-        width: 6px;
+        width: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: transparent;
+        background: #2f3133;
       }
       ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
+        background: #74777a;
+        border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+        background: #9aa0a6;
+      }
+      
+      /* Folha A4 Padrão */
+      .sheet {
+        background: white;
+        width: 210mm;
+        /* Height fixo para visualização exata da quebra, mas min-height para segurança */
+        height: 297mm; 
+        padding: 20mm 15mm; /* Margens: 2cm Top/Bottom, 1.5cm Sides */
+        position: relative;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 20px; /* Gap visual entre páginas */
+        margin-left: auto;
+        margin-right: auto;
+        overflow: hidden; /* Corta o excesso para forçar visualização correta da paginação */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between; /* Garante footer no final se houver espaço */
+      }
+
+      /* Área de Conteúdo Interno da Folha */
+      .sheet-content {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
       }
       
       @media print {
         @page {
           size: A4;
-          margin: 0; /* Controle total via CSS do componente */
+          margin: 0;
         }
         
-        /* Reseta tudo para garantir que nada da UI vaze */
         html, body {
-          width: 210mm;
-          min-height: 297mm;
           background-color: white !important;
           margin: 0 !important;
           padding: 0 !important;
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+          width: 210mm;
+          height: auto;
           overflow: visible !important;
         }
 
-        /* Oculta agressivamente elementos de UI */
+        /* Esconde UI */
         nav, header, aside, footer, button, .no-print, .fixed-action-btn, .tabs-container {
           display: none !important;
         }
-        
-        /* Oculta especificamente o header e nav do app se eles não tiverem tags semânticas */
         #root > div > nav, #root > div > header, #root > div > div > aside {
             display: none !important;
         }
 
-        /* Garante que o root e o main permitam o fluxo */
         #root, main {
           display: block !important;
-          position: static !important;
           width: 100% !important;
-          height: auto !important;
           margin: 0 !important;
           padding: 0 !important;
           background: white !important;
-          overflow: visible !important;
+          position: static !important;
         }
-
-        /* Classe específica para o container do contrato na impressão */
+        
+        /* Container de Impressão */
         .print-container {
-          width: 210mm !important;
+          width: 100% !important;
           margin: 0 !important;
           padding: 0 !important;
-          box-shadow: none !important;
-          border: none !important;
           background: white !important;
-          transform: none !important; /* Remove o scale do preview */
-          position: relative !important;
-          left: 0 !important;
-          top: 0 !important;
-        }
-        
-        /* Suporte para repetição de cabeçalho/rodapé em tabelas */
-        thead { display: table-header-group; }
-        tfoot { display: table-footer-group; }
-        
-        /* Evita quebra dentro de elementos importantes */
-        .break-inside-avoid {
-          break-inside: avoid;
-          page-break-inside: avoid;
+          transform: none !important;
+          box-shadow: none !important;
         }
 
-        /* Garante tipografia preta pura para impressão */
+        /* Configuração da Folha para Impressão */
+        .sheet {
+          box-shadow: none !important;
+          margin: 0 !important;
+          margin-bottom: 0 !important;
+          border: none !important;
+          /* Força quebra de página após cada folha */
+          break-after: page; 
+          page-break-after: always;
+          height: 297mm !important; /* Altura fixa A4 */
+          overflow: hidden !important;
+        }
+        
+        /* Remove quebra da última página para evitar folha em branco extra */
+        .sheet:last-child {
+          break-after: auto;
+          page-break-after: auto;
+        }
+
         .text-gray-900, .text-gray-800, p {
           color: #000 !important;
         }
