@@ -53,6 +53,11 @@
         nav, header, aside, footer, button, .no-print, .fixed-action-btn, .tabs-container {
           display: none !important;
         }
+        
+        /* Oculta especificamente o header e nav do app se eles não tiverem tags semânticas */
+        #root > div > nav, #root > div > header, #root > div > div > aside {
+            display: none !important;
+        }
 
         /* Garante que o root e o main permitam o fluxo */
         #root, main {
@@ -75,6 +80,9 @@
           border: none !important;
           background: white !important;
           transform: none !important; /* Remove o scale do preview */
+          position: relative !important;
+          left: 0 !important;
+          top: 0 !important;
         }
         
         /* Suporte para repetição de cabeçalho/rodapé em tabelas */
