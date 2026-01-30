@@ -103,7 +103,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
     </div>
   );
 
-  const Footer = () => (
+  const Footer: React.FC<{ pageNum: number, totalPages: number }> = ({ pageNum, totalPages }) => (
     <div className="mt-auto pt-2 border-t border-gray-200 flex justify-between items-end text-[7px] text-gray-500 font-medium uppercase tracking-wider w-full">
       <div className="space-y-0.5 text-left leading-tight">
         <p>Av. Maria Teresa, 75, sala 328</p>
@@ -113,6 +113,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       <div className="text-right leading-tight">
         <p className="font-black text-gray-900 text-[8px]">Flafson Barbosa</p>
         <p className="font-bold text-[#9c7d2c]">ADVOGADO | OAB/RJ: 213.777</p>
+        <p className="mt-1 text-[6px] text-gray-400">Página {pageNum} de {totalPages}</p>
       </div>
     </div>
   );
@@ -285,6 +286,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
     let currentHeight = 0;
     // Limite de altura seguro para A4 (297mm) com margem 15mm (sobra 267mm)
     // 267mm ~= 1000px. Unidades arbitrárias calibradas para line-height 1.15
+    // Aumentado para 3600 devido ao menor line-height e menores margens
     const MAX_HEIGHT_PER_PAGE = 3600; 
 
     blocks.forEach(block => {
@@ -349,7 +351,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
                 })}
              </div>
 
-             <Footer />
+             <Footer pageNum={pageIndex + 1} totalPages={pages.length} />
           </div>
         ))}
       </div>

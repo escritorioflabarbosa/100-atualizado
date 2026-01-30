@@ -31,15 +31,16 @@
         background: #9aa0a6;
       }
       
-      /* Folha A4 Padrão */
+      /* Folha A4 Padrão - Visualização Web */
       .sheet {
         background: white;
         width: 210mm;
         height: 297mm; 
         padding: 15mm; /* Margem solicitada: 15mm */
         position: relative;
-        box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); /* Sombra mais pronunciada para contraste */
-        margin-bottom: 30px; /* Gap visual maior entre páginas */
+        /* Sombra forte para contraste com fundo cinza */
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); 
+        margin-bottom: 30px; /* Espaço entre páginas na tela */
         margin-left: auto;
         margin-right: auto;
         overflow: hidden;
@@ -58,8 +59,8 @@
       
       @media print {
         @page {
-          size: A4;
-          margin: 0;
+          size: A4 portrait;
+          margin: 0; /* Controle total via CSS do componente */
         }
         
         html, body {
@@ -69,14 +70,27 @@
           width: 210mm;
           height: auto;
           overflow: visible !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
 
-        /* Remoção agressiva de Branding e UI */
+        /* REMOÇÃO TOTAL DE BRANDING E UI DO SITE */
         nav, header, aside, footer, button, .no-print, .fixed-action-btn, .tabs-container, .logo-site, .nav-menu, .sidebar {
           display: none !important;
         }
-        #root > div > nav, #root > div > header, #root > div > div > aside {
-            display: none !important;
+        
+        /* Seletores específicos para limpar o layout do Lawyer Pro */
+        #root > div > nav, 
+        #root > div > header, 
+        #root > div > div > aside,
+        .bg-gray-600 { /* Remove fundo cinza do editor na impressão */
+            background-color: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
         }
 
         #root, main {
@@ -90,7 +104,7 @@
         
         /* Container de Impressão */
         .print-container {
-          width: 100% !important;
+          width: 210mm !important;
           margin: 0 !important;
           padding: 0 !important;
           background: white !important;
@@ -112,17 +126,18 @@
           page-break-after: always;
           height: 297mm !important;
           overflow: hidden !important;
+          width: 210mm !important;
         }
         
+        /* Evita folha em branco extra no final */
         .sheet:last-child {
           break-after: auto;
           page-break-after: auto;
         }
 
-        .text-gray-900, .text-gray-800, p, span, div {
-          color: #000 !important; /* Preto puro para impressão */
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
+        /* Tipografia Profissional para Impressão */
+        .text-gray-900, .text-gray-800, p, span, div, h1, h2, h3 {
+          color: #000000 !important; /* Preto puro */
         }
       }
     </style>
