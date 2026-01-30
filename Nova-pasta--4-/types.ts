@@ -82,6 +82,7 @@ export interface FormDataPF {
   valorParcela: string;
   dataPagamentoParcelas: string;
   formaPagamento: string;
+  formaPagamentoEntrada: string;
 }
 
 export interface FormDataPJ {
@@ -109,6 +110,7 @@ export interface FormDataPJ {
   valorParcela: string;
   dataPagamentoParcelas: string;
   formaPagamento: string;
+  formaPagamentoEntrada: string;
   data: string;
 }
 

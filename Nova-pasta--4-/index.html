@@ -34,26 +34,57 @@
       @media print {
         @page {
           margin: 0;
-          size: auto;
+          size: A4 portrait;
         }
-        body {
+        html, body {
+          width: 210mm;
+          height: auto !important;
           background-color: white !important;
           margin: 0 !important;
           padding: 0 !important;
+          -webkit-print-color-adjust: exact;
+          overflow: visible !important;
+        }
+        #root, #root > div {
+          height: auto !important;
+          display: block !important;
+          overflow: visible !important;
         }
         #root > div > nav,
         header,
         aside,
         .tabs-container,
-        footer {
+        footer,
+        .no-print,
+        button,
+        .fixed-action-btn {
           display: none !important;
         }
         main {
+          display: block !important;
           padding: 0 !important;
           margin: 0 !important;
           overflow: visible !important;
           background-color: white !important;
           width: 100% !important;
+          height: auto !important;
+          position: static !important;
+        }
+        /* Força a escala 1 na impressão para evitar borrões ou cortes por zoom */
+        .print-scale-fix {
+          transform: none !important;
+          top: auto !important;
+          left: auto !important;
+          position: static !important;
+          box-shadow: none !important;
+          border: none !important;
+          width: 100% !important;
+          height: auto !important;
+          display: block !important;
+        }
+        .page-break {
+          page-break-after: always !important;
+          break-after: page !important;
         }
       }
     </style>

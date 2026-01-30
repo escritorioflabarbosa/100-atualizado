@@ -27,23 +27,27 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
   const baseScale = Math.min(1.1, parentWidth / 595);
   const finalScale = (zoom / 100) * baseScale;
   
-  const scaledWidth = 595 * finalScale;
-  const scaledHeight = 842 * finalScale;
+  const A4_WIDTH_PX = 595;
+  const A4_HEIGHT_PX = 842;
+  const scaledWidth = A4_WIDTH_PX * finalScale;
+  const scaledHeight = A4_HEIGHT_PX * finalScale;
+
+  const formatCurrency = (val: string) => {
+    if (!val || val === '0,00') return '________________';
+    return `R$ ${val.replace('R$', '').trim()}`;
+  };
+
+  const formatDateString = (dateStr: string) => {
+    if (!dateStr) return '________________';
+    const parts = dateStr.split('-');
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
+  };
+
+  const isSinglePayment = ['PIX', 'CARTÃO DE CRÉDITO', 'À VISTA'].includes(data.formaPagamento);
 
   const replace = (text: string) => {
     if (!text) return "";
     let result = text;
-
-    const formatCurrency = (val: string) => {
-      if (!val || val === '0,00') return '________________';
-      return `R$ ${val.replace('R$', '').trim()}`;
-    };
-
-    const formatDateString = (dateStr: string) => {
-      if (!dateStr) return '________________';
-      const parts = dateStr.split('-');
-      return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
-    };
 
     const mappings: Record<string, string> = {
       '/NOME/': data.nome || '________________',
@@ -72,6 +76,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       '/NUMEO DE PROCESSO/': data.numProcesso || '________________',
       '/VALOR TOTAL/': formatCurrency(data.valorTotal),
       '/ENTRADA/': formatCurrency(data.entrada),
+      '/FORMA DE PAGAMENTO ENTRADA/': data.formaPagamentoEntrada || '________________',
       '/DATA DE ENTRADA/': formatDateString(data.dataEntrada),
       '/VEZES DE PARCELAS/': data.vezesParcelas || '________________',
       '/VALOR DA PARCELA/': formatCurrency(data.valorParcela),
@@ -91,8 +96,62 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
     return result;
   };
 
+  const PaymentTable = () => (
+    <div className="mt-4 border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
+        <h4 className="text-[9px] font-black uppercase tracking-widest text-[#9c7d2c] text-center">Demonstrativo de Pagamento</h4>
+      </div>
+      <table className="w-full text-[9px]">
+        <thead>
+          <tr className="bg-gray-50/50 border-b border-gray-200">
+            <th className="px-4 py-2 text-left font-black text-gray-400 uppercase tracking-tighter">Item de Cobrança</th>
+            <th className="px-4 py-2 text-center font-black text-gray-400 uppercase tracking-tighter">Vencimento / Forma</th>
+            <th className="px-4 py-2 text-right font-black text-gray-400 uppercase tracking-tighter">Valor</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {isSinglePayment ? (
+            <tr>
+              <td className="px-4 py-2 font-bold text-gray-700">Pagamento Único</td>
+              <td className="px-4 py-2 text-center text-gray-600">
+                {formatDateString(data.dataEntrada)}<br/>
+                <span className="text-[7px] font-bold uppercase">Via {data.formaPagamento}</span>
+              </td>
+              <td className="px-4 py-2 text-right font-black text-gray-900">{formatCurrency(data.valorTotal)}</td>
+            </tr>
+          ) : (
+            <>
+              <tr>
+                <td className="px-4 py-2 font-bold text-gray-700">Sinal / Entrada</td>
+                <td className="px-4 py-2 text-center text-gray-600">
+                  {formatDateString(data.dataEntrada)}<br/>
+                  <span className="text-[7px] font-bold uppercase">Via {data.formaPagamentoEntrada}</span>
+                </td>
+                <td className="px-4 py-2 text-right font-black text-gray-900">{formatCurrency(data.entrada)}</td>
+              </tr>
+              {parseInt(data.vezesParcelas) > 0 && (
+                <tr>
+                  <td className="px-4 py-2 font-bold text-gray-700">{data.vezesParcelas} Parcelas Fixas</td>
+                  <td className="px-4 py-2 text-center text-gray-600">
+                    Todo dia {data.dataPagamentoParcelas || '--'}<br/>
+                    <span className="text-[7px] font-bold uppercase">Via {data.formaPagamento}</span>
+                  </td>
+                  <td className="px-4 py-2 text-right font-black text-gray-900">{formatCurrency(data.valorParcela)} (cada)</td>
+                </tr>
+              )}
+            </>
+          )}
+          <tr className="bg-[#9c7d2c]/5">
+            <td colSpan={2} className="px-4 py-2 text-right font-black uppercase text-[8px] text-[#9c7d2c]">Valor Global do Contrato</td>
+            <td className="px-4 py-2 text-right font-black text-gray-900 border-l border-[#9c7d2c]/10">{formatCurrency(data.valorTotal)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+
   const Header = () => (
-    <div className="flex flex-col items-center mb-6">
+    <div className="flex flex-col items-center mb-6 shrink-0">
       <div className="text-3xl font-extrabold text-[#9c7d2c]">FB</div>
       <div className="text-[7px] tracking-[0.4em] text-[#9c7d2c] font-black uppercase mt-1">FB Advocacia & Consultoria</div>
       <div className="w-24 h-[0.5px] bg-[#9c7d2c]/40 mt-3"></div>
@@ -100,7 +159,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
   );
 
   const Footer = () => (
-    <div className="mt-auto pt-4 border-t border-gray-100 flex justify-between items-end text-[6.5px] text-gray-400 font-bold uppercase tracking-widest">
+    <div className="mt-auto pt-4 border-t border-gray-100 flex justify-between items-end text-[6.5px] text-gray-400 font-bold uppercase tracking-widest shrink-0">
       <div className="space-y-0.5 text-left">
         <p>Av. Maria Teresa, 75, sala 328 - Business Completo - Campo Grande - RJ</p>
         <p>suporte@flafsonadvocacia.com • (21) 99452-6345</p>
@@ -113,12 +172,25 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
   );
 
   const PageWrapper = ({ children }: { children?: React.ReactNode }) => (
-    <div className="flex flex-col items-center justify-center w-full" style={{ minHeight: `${scaledHeight}px` }}>
-      <div className="relative shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] bg-white overflow-hidden print:shadow-none print:m-0 border border-gray-100" style={{ width: `${scaledWidth}px`, height: `${scaledHeight}px` }}>
-        <div className="bg-white p-12 flex flex-col font-contract print:p-12" 
-          style={{ width: '595px', height: '842px', transform: `scale(${finalScale})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0 }}>
+    <div className="flex flex-col items-center justify-center w-full print:block print:w-full print:h-auto page-break">
+      <div 
+        className="print-scale-fix relative shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] bg-white overflow-hidden print:shadow-none print:m-0 border border-gray-100 print:border-none print:w-full" 
+        style={{ width: `${scaledWidth}px`, height: `${scaledHeight}px` }}
+      >
+        <div 
+          className="bg-white p-12 flex flex-col font-contract print:p-12 print:static print:transform-none print:w-full print:h-[297mm]" 
+          style={{ 
+            width: `${A4_WIDTH_PX}px`, 
+            height: `${A4_HEIGHT_PX}px`, 
+            transform: `scale(${finalScale})`, 
+            transformOrigin: 'top left', 
+            position: 'absolute', 
+            top: 0, 
+            left: 0 
+          }}
+        >
           <Header />
-          <div className="flex-grow overflow-hidden flex flex-col">{children}</div>
+          <div className="flex-grow flex flex-col print:overflow-visible justify-start">{children}</div>
           <Footer />
         </div>
       </div>
@@ -132,75 +204,59 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
           <>
             <PageWrapper>
               <div className="text-[10px] leading-[1.4] text-gray-800 text-justify space-y-3">
-                <h1 className="text-center font-black text-xs mb-6 uppercase underline tracking-widest">CONTRATO DE HONORÁRIOS ADVOCATÍCIOS</h1>
-                <p dangerouslySetInnerHTML={{ __html: replace('OUTORGANTE: /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF/MF de nº /CPF/, residente e domiciliado em /Rua/, /COMPLEMENTO/, - CEP: /CEP/.') }} />
-                <p className="p-4 bg-gray-50 border-l-4 border-[#9c7d2c] rounded-r-xl">
-                  <span className="font-bold text-black">OUTORGADO: Flafson Barbosa Borges</span>, inscrito na OAB/RJ sob o nº 213.777, com escritório profissional localizado na Av. Maria Teresa, 75, sala 328, Campo Grande - Rio de Janeiro, CEP: 23.050-160, e-mail: suporte@flafsonadvocacia.com, telefone/WhatsApp: (21) 99452-6345.
+                <h1 className="text-center font-black text-xs mb-4 uppercase underline tracking-widest">CONTRATO DE HONORÁRIOS ADVOCATÍCIOS</h1>
+                
+                <p dangerouslySetInnerHTML={{ __html: replace('OUTORGANTE: /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF/MF de nº /CPF/, residente e domiciliado em /Rua/, /COMPLEMENTO/, - CEP: /CEP/, pelo presente instrumento particular de procuração nomeia e constitui seu advogado:') }} />
+                
+                <p className="p-3 bg-gray-50 border-l-4 border-[#9c7d2c] rounded-r-xl">
+                  <span className="font-bold text-black">OUTORGADO: Flafson Barbosa Borges</span>, OAB/RJ 213.777, Av. Maria Teresa, 75, sala 328, Campo Grande - RJ, CEP: 23.050-160. suporte@flafsonadvocacia.com.
                 </p>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DO OBJETO DO CONTRATO</h2>
-                  <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 1ª. O presente instrumento tem como OBJETO a prestação de serviços advocatícios na ação judicial de revisão de cláusulas contratuais de N°: /NUMEO DE PROCESSO/ que lhe é movida a serem realizados nas instâncias ordinárias e em grau de recurso ao qual fica obrigada a parte contratante a verificar os fatos e fundamentos do processo através do site do tribunal de referência ou ir à serventia para verificar o seu processo e o ratificá-lo e não fazendo estará automaticamente ratificado o processo com seus fatos e fundamentos redigidos. Fica obrigada a parte contratante a tomar ciência do processo e seu número através do telefone do escritório ou pessoalmente ao mesmo.') }} />
-                </section>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DAS ATIVIDADES</h2>
-                  <p>Cláusula 2ª. As atividades inclusas na prestação de serviço objeto deste instrumento são todas aquelas inerentes à profissão, ou seja, todos os atos inerentes ao exercício da advocacia e aqueles constantes no Estatuto da Ordem dos Advogados do Brasil, bem como os especificados no instrumento de mandato. Atividades que fazem parte além as da procuração são a de atendimento ao cliente inicial, redigir a petição inicial, fazer o cálculo, distribuição da peça judicial, atendimento ao cliente por telefone diariamente em todos os dias úteis do ano, atendimento presencial quando solicitado por e-mail suporte@flafsonadvocacia.com ou telefone acima especificado, acompanhamento do processo judicial, petições interlocutórias no processo.</p>
-                </section>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DOS ATOS PROCESSUAIS</h2>
-                  <p>Cláusula 3ª. Havendo necessidade de contratação de outros profissionais, no decurso do processo, o CONTRATADO elaborará substabelecimento, indicando os advogados de seu conhecimento.</p>
-                </section>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DA COBRANÇA</h2>
-                  <p>Cláusula 4ª. As partes acordam que facultará ao CONTRATADO, o direito de realizar a cobrança dos honorários por todos os meios admitidos em direito.</p>
-                </section>
+
+                <h2 className="font-black uppercase mt-2 text-[10px] text-[#9c7d2c] tracking-wider underline">DO OBJETO E ATIVIDADES</h2>
+                <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 1ª. O presente instrumento tem como OBJETO a prestação de serviços advocatícios na ação judicial de N°: /NUMERO DE PROCESSO/, nas instâncias ordinárias e em grau de recurso. Fica obrigada a parte contratante a tomar ciência do processo e seu número através do telefone do escritório ou pessoalmente.') }} />
+                
+                <p>Cláusula 2ª. As atividades inclusas compreendem todas aquelas inerentes à profissão, conforme Estatuto da OAB, incluindo petição inicial, cálculos, atendimento diário e acompanhamento integral do processo judicial.</p>
+
+                <h2 className="font-black uppercase mt-2 text-[10px] text-[#9c7d2c] tracking-wider underline">DOS HONORÁRIOS</h2>
+                {isSinglePayment ? (
+                    <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 3ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais, pagos em parcela única via /FORMA DE PAGAMENTO/ na data de /DATA DE ENTRADA/.') }} />
+                  ) : (
+                    <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 3ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais, pago /ENTRADA/ de entrada via /FORMA DE PAGAMENTO ENTRADA/, até dia /DATA DE ENTRADA/ + /VEZES DE PARCELAS/ parcelas iguais no valor de /VALOR DA PARCELA/ todo dia /DATA DE PAGAMENTO DAS PARCELAS/ via /FORMA DE PAGAMENTO/.') }} />
+                  )}
+                
+                <PaymentTable />
+
+                <div className="space-y-1 text-[9px] border-l-2 border-gray-100 pl-3">
+                    <p>§1º. Os honorários de sucumbência serão revertidos integralmente ao CONTRATADO.</p>
+                    <p>§2º. O contratado está autorizado a retirar sua parte dos honorários (30% do êxito) diretamente do valor recebido ou RPV.</p>
+                </div>
+
+                <h2 className="font-black uppercase mt-2 text-[10px] text-[#9c7d2c] tracking-wider underline">DA COBRANÇA E RESCISÃO</h2>
+                <p>Cláusula 4ª. Facultará ao CONTRATADO realizar a cobrança por todos os meios admitidos em direito. A inadimplência autoriza inscrição em SPC/SERASA. Cláusula 5ª. Rescisão mediante aviso prévio por escrito com 30 dias de antecedência.</p>
               </div>
             </PageWrapper>
+
             <PageWrapper>
-              <div className="text-[10px] leading-[1.4] text-gray-800 text-justify space-y-3">
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DOS HONORÁRIOS</h2>
-                  <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 5ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais, pago /ENTRADA/ de entrada, até dia /DATA DE ENTRADA/ + /VEZES DE PARCELAS/ parcelas iguais no valor de /VALOR DA PARCELA/ todo dia /DATA DE PAGAMENTO DAS PARCELAS/.<br/><br/>Caso não pague a mensalidade ou prestação incidirá multa de 10% do valor devido e mais juros de 1% e correção pelo IGP-M ao mês (na falta do índice do IGP-M será adotado outro índice oficial que vier a ser adotado em seu lugar ou equivalente).') }} />
-                  <div className="mt-3 space-y-1.5 text-[9px]">
-                    <p>Parágrafo Primeiro. Os honorários de sucumbência, que são pagos pela parte contrária, serão revertidos integralmente ao CONTRATADO.</p>
-                    <p>Parágrafo Segundo - Caso a parte rescinda o contrato de honorários o mesmo terá que enviar uma carta ao escritório com o pedido e a parte contratada ficará com os valores já pagos e os devidos do contrato, por se tratar de honorários iniciais.</p>
-                    <p>Parágrafo Terceiro. Caso haja morte ou incapacidade civil do CONTRATADO, seus sucessores ou representante legal receberão os honorários.</p>
-                    <p>Parágrafo Quarto. O contratado está autorizado a receber pelo contratante e dar quitação ao processo e retirar a sua parte dos honorários (trinta porcento do total) diretamente do valor que for recebido e terá o prazo de 7 dias uteis para efetuar o pagamento do valor devido ao contratante sem incidir juros e correção monetária, a partir da confirmação da indenização recebida.</p>
-                    <p>Parágrafo Quinto. Caso tenha que pagar Imposto de Renda ou qualquer outro imposto ou que o mesmo seja automaticamente deduzido no valor que receba de indenizações materiais, morais ou qualquer outra natureza os mesmos serão pagos exclusivamente pela parte contratante.</p>
-                  </div>
-                </section>
-                <section>
-                  <p>Cláusula 6ª. Havendo acordo entre o CONTRATANTE e a parte contrária, tal fato não prejudicará o recebimento dos honorários contratados e da sucumbência.</p>
-                  <p>Cláusula 7ª. O CONTRATANTE concorda que os honorários advocatícios referentes às custas iniciais dos serviços prestados serão pagos de forma antecipada, no caso de formalização de qualquer acordo. O valor total dos honorários será estipulado na clausula 5°, e deverá ser quitado antes da celebração do referido acordo.</p>
-                </section>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DA RESCISÃO</h2>
-                  <p>Cláusula 8ª. O presente contrato poderá ser rescindido por qualquer das partes, mediante aviso prévio, por escrito com aviso de recebimento, com 30 (trinta) dias de antecedência, incidindo nesse caso a totalidade dos honorários contratados.</p>
-                </section>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DOS DADOS</h2>
-                  <p>Cláusula 9ª. O contratante autoriza desde já a disponibilização dos dados somente e exclusivamente para os colaboradores do escritório contratado e a única exceção será caso fique inadimplente com o escritório contratado fica autorizado a disponibilizar os dados aos serviços de cadastros de inadimplentes como o SPC, SERASA e PROTESTO.</p>
-                </section>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DO FORO</h2>
-                  <p>Cláusula 10ª. Para dirimir quaisquer controvérsias oriundas do CONTRATO, as partes elegem o foro do Centro da Cidade (comarca da capital) da comarca do Rio de Janeiro, Rio de Janeiro.</p>
-                </section>
-                
-                <div className="mt-12 text-center space-y-12">
+               <div className="text-[10px] leading-[1.4] text-gray-800 text-justify space-y-3">
+                  <h2 className="font-black uppercase text-[10px] text-[#9c7d2c] tracking-wider underline">DO FORO</h2>
+                  <p>Cláusula 6ª. Fica eleito o Foro do Centro da Cidade da comarca do Rio de Janeiro para dirimir quaisquer dúvidas oriundas deste contrato.</p>
+                  
+                  <div className="mt-16 text-center space-y-12">
                    <p className="font-bold text-[10px]" dangerouslySetInnerHTML={{ __html: replace('/CIDADE/, /DIA/ de /MÊS/ de /ANO/.') }} />
                    <div className="flex justify-around items-end pt-8">
                      <div className="text-center space-y-1">
-                       <div className="w-44 border-t border-black"></div>
-                       <p className="text-[8px] font-black uppercase" dangerouslySetInnerHTML={{ __html: replace('/NOME/') }}></p>
-                       <p className="text-[7px] text-gray-400 font-bold uppercase">(OUTORGANTE)</p>
+                       <div className="w-40 border-t border-black"></div>
+                       <p className="text-[8px] font-black uppercase max-w-[160px] truncate" dangerouslySetInnerHTML={{ __html: replace('/NOME/') }}></p>
+                       <p className="text-[7px] text-gray-400 font-bold uppercase tracking-widest">(OUTORGANTE)</p>
                      </div>
                      <div className="text-center space-y-1">
-                       <div className="w-44 border-t border-[#9c7d2c]"></div>
+                       <div className="w-40 border-t border-[#9c7d2c]"></div>
                        <p className="text-[8px] font-black uppercase text-[#9c7d2c]">FLAFSON BORGES BARBOSA</p>
                        <p className="text-[7px] text-[#9c7d2c] font-bold uppercase">OAB/RJ 213.777</p>
                      </div>
                    </div>
                 </div>
-              </div>
+               </div>
             </PageWrapper>
           </>
         );
@@ -209,48 +265,45 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
         return (
           <>
             <PageWrapper>
-              <div className="text-[10px] leading-[1.35] text-gray-800 text-justify space-y-3">
-                <h1 className="text-center font-black text-xs mb-6 uppercase underline tracking-widest">CONTRATO DE HONORÁRIOS ADVOCATÍCIOS</h1>
-                <p dangerouslySetInnerHTML={{ __html: replace('OUTORGANTE: /NOME DA EMPRESA/, pessoa jurídica de direito privado, inscrita no CNPJ sob nº /CNPJ DA EMPRESA/, com sede na /ENDEREÇO DE EMPRESA/, /BAIRRO DO REPRESENTANDE/, /CIDADE DA SEDE/ - /ESTADO DA CEP/ - CEP: /CEP DO DA SEDE/, endereço eletrônico desconhecido, neste ato representada por seu:') }} />
-                <p dangerouslySetInnerHTML={{ __html: replace('REPRESENTANTES LEGAIS: Sr. /NOME DO REPRESENTANTE/, /NACIONALIDADE/, /PROFISSÃO/, /ESTADO CIVIL/, e CPF nº /CPF/, residente e domiciliado em /ENDEREÇO DO REPRESENTANDE/, /CIDADE DO REPRESENTANTE/ - /ESTADO DO REPRESENTANTE/ - CEP: /CEP DO REPRESENTANTE/.') }} />
-                <p className="p-4 bg-gray-50 border-l-4 border-[#9c7d2c] rounded-r-xl">
-                  <span className="font-bold text-black">OUTORGADO: Flafson Barbosa Borges</span>, inscrito na OAB/RJ sob o nº 213.777, com escritório profissional localizado na Av. Maria Teresa, 75, sala 328, Campo Grande - Rio de Janeiro, CEP: 23.050-160, e-mail: suporte@flafsonadvocacia.com, telefone/WhatsApp: (21) 99452-6345.
-                </p>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DO OBJETO DO CONTRATO</h2>
-                  <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 1ª. O presente instrumento tem como OBJETO a prestação de serviços advocatícios na ação judicial de revisão de cláusulas contratuais de N°: /NUMEO DE PROCESSO/ que lhe é movida a serem realizados nas instâncias ordinárias e em grau de recurso ao qual fica obrigada a parte contratante a verificar os fatos e fundamentos do processo através do site do tribunal de referência ou ir à serventia para verificar o seu processo e o ratificá-lo e não fazendo estará automaticamente ratificado o processo com seus fatos e fundamentos redigidos. Fica obrigada a parte contratante a tomar ciência do processo e seu número através do telefone do escritório ou pessoalmente ao mesmo.') }} />
-                </section>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DAS ATIVIDADES</h2>
-                  <p>Cláusula 2ª. As atividades inclusas na prestação de serviço objeto deste instrumento são todas aquelas inerentes à profissão, ou seja, todos os atos inerentes ao exercício da advocacia e aqueles constantes no Estatuto da Ordem dos Advogados do Brasil, bem como os especificados no instrumento de mandato. Atividades que fazem parte além as da procuração são a de atendimento ao cliente inicial, redigir a petição inicial, fazer o cálculo, distribuição da peça judicial, atendimento ao cliente por telefone diariamente em todos os dias úteis do ano, atendimento presencial quando solicitado por e-mail suporte@flafsonadvocacia.com ou telefone acima especificado, acompanhamento do processo judicial, petições interlocutórias no processo.</p>
-                </section>
+              <div className="text-[10px] leading-[1.4] text-gray-800 text-justify space-y-3">
+                <h1 className="text-center font-black text-xs mb-4 uppercase underline tracking-widest">CONTRATO DE HONORÁRIOS ADVOCATÍCIOS (PJ)</h1>
+                <p dangerouslySetInnerHTML={{ __html: replace('OUTORGANTE: /NOME DA EMPRESA/, inscrita no CNPJ sob nº /CNPJ DA EMPRESA/, com sede na /ENDEREÇO DE EMPRESA/, /BAIRRO DO REPRESENTANDE/, /CIDADE DA SEDE/ - /ESTADO DA CEP/ - CEP: /CEP DO DA SEDE/.') }} />
+                <p dangerouslySetInnerHTML={{ __html: replace('REPRESENTANTES LEGAIS: Sr. /NOME DO REPRESENTANTE/, /NACIONALIDADE/, /PROFISSÃO/, /ESTADO CIVIL/, e CPF nº /CPF/, residente em /ENDEREÇO DO REPRESENTANDE/, /CIDADE DO REPRESENTANTE/ - /ESTADO DO REPRESENTANTE/ - CEP: /CEP DO REPRESENTANTE/.') }} />
+                
+                <h2 className="font-black uppercase mt-2 text-[10px] text-[#9c7d2c] tracking-wider underline">DO OBJETO E ATIVIDADES</h2>
+                <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 1ª. Prestação de serviços na ação N°: /NUMERO DE PROCESSO/. Cláusula 2ª. Atividades inerentes à profissão conforme Estatuto da OAB.') }} />
+                
+                <h2 className="font-black uppercase mt-2 text-[10px] text-[#9c7d2c] tracking-wider underline">DOS HONORÁRIOS</h2>
+                {isSinglePayment ? (
+                    <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 3ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais, pagos em parcela única via /FORMA DE PAGAMENTO/ na data de /DATA DE ENTRADA/.') }} />
+                  ) : (
+                    <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 3ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais.') }} />
+                  )}
+                  
+                <PaymentTable />
+
+                <div className="space-y-1 text-[9px] border-l-2 border-gray-100 pl-3">
+                    <p>§1º. Honorários de sucumbência revertidos ao CONTRATADO.</p>
+                    <p>§2º. Autorização para retenção de 30% de êxito diretamente do valor recebido.</p>
+                </div>
+
+                <h2 className="font-black uppercase mt-2 text-[10px] text-[#9c7d2c] tracking-wider underline">DA RESCISÃO E FORO</h2>
+                <p>Cláusula 4ª. Rescisão exige aviso prévio de 30 dias. Cláusula 5ª. Foro do Centro da Cidade da comarca do Rio de Janeiro.</p>
               </div>
             </PageWrapper>
+
             <PageWrapper>
-              <div className="text-[10px] leading-[1.35] text-gray-800 text-justify space-y-3">
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DOS HONORÁRIOS</h2>
-                  <p dangerouslySetInnerHTML={{ __html: replace('Cláusula 5ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais. <br/>Forma de pagamento: /FORMA DE PAGAMENTO/, sendo /ENTRADA/ de entrada, até dia /DATA DE ENTRADA/ + /VEZES DE PARCELAS/ parcelas iguais no valor de /VALOR DA PARCELA/ todo dia /DATA DE PAGAMENTO DAS PARCELAS/. <br/><br/>Caso não pague a mensalidade ou prestação incidirá multa de 10% do valor devido e mais juros de 1% e correção pelo IGP-M ao mês.') }} />
-                </section>
-                <div className="space-y-1.5 text-[8.5px] mb-4">
-                    <p>Parágrafo Primeiro. Os honorários de sucumbência serão revertidos integralmente ao CONTRATADO.</p>
-                    <p>Parágrafo Segundo - Rescisão exige envio de carta ao escritório.</p>
-                    <p>Parágrafo Quarto. O contratado está autorizado a receber pelo contratante e retirar sua parte dos honorários (trinta porcento do total) diretamente do valor recebido.</p>
-                </div>
-                <section>
-                  <h2 className="font-black uppercase mb-1.5 text-[10px] text-[#9c7d2c] tracking-wider">DA RESCISÃO E FORO</h2>
-                  <p>Cláusula 8ª. Rescisão mediante aviso prévio de 30 dias. Cláusula 10ª. Foro do Centro da Cidade da comarca do Rio de Janeiro.</p>
-                </section>
-                <div className="mt-20 text-center space-y-12">
+              <div className="text-[10px] leading-[1.4] text-gray-800 text-justify space-y-3">
+                <div className="mt-16 text-center space-y-12">
                    <p className="font-bold text-[10px]" dangerouslySetInnerHTML={{ __html: replace('/ESTADO/, /DIA/ de /MÊS/ de /ANO/.') }} />
-                   <div className="flex justify-around items-end pt-12">
+                   <div className="flex justify-around items-end pt-8">
                      <div className="text-center space-y-1">
-                       <div className="w-44 border-t border-black"></div>
-                       <p className="text-[8px] font-black uppercase" dangerouslySetInnerHTML={{ __html: replace('/NOME DA EMPRESA/') }}></p>
-                       <p className="text-[7px] text-gray-400 font-bold uppercase">(OUTORGANTE)</p>
+                       <div className="w-40 border-t border-black"></div>
+                       <p className="text-[8px] font-black uppercase max-w-[160px] truncate" dangerouslySetInnerHTML={{ __html: replace('/NOME DA EMPRESA/') }}></p>
+                       <p className="text-[7px] text-gray-400 font-bold uppercase tracking-widest">(OUTORGANTE)</p>
                      </div>
                      <div className="text-center space-y-1">
-                       <div className="w-44 border-t border-[#9c7d2c]"></div>
+                       <div className="w-40 border-t border-[#9c7d2c]"></div>
                        <p className="text-[8px] font-black uppercase text-[#9c7d2c]">FLAFSON BORGES BARBOSA</p>
                        <p className="text-[7px] text-[#9c7d2c] font-bold uppercase">OAB/RJ 213.777</p>
                      </div>
@@ -265,25 +318,25 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       case 'PJ_PROCURACAO':
         const isPJ = type === 'PJ_PROCURACAO';
         const procuracaoText = isPJ 
-          ? 'OUTORGANTE: /NOME DA EMPRESA/, pessoa jurídica de direito privado, inscrita no CNPJ sob nº /CNPJ/, com sede na /ENDEREÇO DA SEDE/, /CIDADE DA SEDE/ - /ESTADO DA SEDE/ - CEP: /CEP DA SEDE/, neste ato representada por seu: /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF/MF de nº /CPF/, residente e domiciliado em /Rua/, /COMPLEMENTO/, - CEP: /CEP/, pelo presente instrumento particular de procuração nomeia e constitui seu advogado:'
-          : 'OUTORGANTE: /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF/MF de nº /CPF/, residente e domiciliado em /Rua/, /COMPLEMENTO/, - CEP: /CEP/, pelo presente instrumento particular de procuração nomeia e constitui seu advogado:';
+          ? 'OUTORGANTE: /NOME DA EMPRESA/, inscrita no CNPJ sob nº /CNPJ/, com sede na /ENDEREÇO DA SEDE/, /CIDADE DA SEDE/ - /ESTADO DA SEDE/ - CEP: /CEP DA SEDE/, representada por: /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF/MF nº /CPF/, residente em /Rua/, /COMPLEMENTO/.'
+          : 'OUTORGANTE: /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF/MF de nº /CPF/, residente e domiciliado em /Rua/, /COMPLEMENTO/, - CEP: /CEP/.';
         
         return (
           <PageWrapper>
             <div className="text-[9.5px] leading-[1.55] text-gray-800 text-justify">
-               <h1 className="text-center font-black text-xs mb-6 underline uppercase tracking-widest">PROCURAÇÃO</h1>
-               <p className="mb-3.5" dangerouslySetInnerHTML={{ __html: replace(procuracaoText) }} />
-               <p className="mb-3.5 font-bold p-3.5 bg-gray-50 border-l-4 border-[#9c7d2c] rounded-r-xl">
-                 OUTORGADO: Flafson Borges Barbosa, OAB/RJ 213.777, com escritório profissional localizado na Av. Maria Teresa, 75, sala 328, Campo Grande - Rio de Janeiro, CEP: 23.050-160, e-mail: suporte@flafsonadvocacia.com, telefone/WhatsApp: (21) 99452-6345.
+               <h1 className="text-center font-black text-xs mb-8 underline uppercase tracking-widest">PROCURAÇÃO AD JUDICIA ET EXTRA</h1>
+               <p className="mb-4" dangerouslySetInnerHTML={{ __html: replace(procuracaoText) }} />
+               <p className="mb-4 font-bold p-4 bg-gray-50 border-l-4 border-[#9c7d2c] rounded-r-xl">
+                 OUTORGADO: Flafson Borges Barbosa, OAB/RJ 213.777, Av. Maria Teresa, 75, sala 328, Campo Grande - RJ, CEP: 23.050-160. suporte@flafsonadvocacia.com.
                </p>
-               <p className="mb-3.5" dangerouslySetInnerHTML={{ __html: replace('<span class="font-bold text-[#9c7d2c] uppercase tracking-wider">OBJETO:</span> Representar o outorgante no processo judicial de revisão de cláusulas contratuais de N°: /NUMERO DE PROCESSO/, promovendo a defesa dos seus direitos e interesses, podendo, para tanto, propor quaisquer ações, medidas incidentais, acompanhar processos administrativos e/ou judiciais em qualquer Juízo, Instância, Tribunal ou Repartição Pública.') }} />
-               <p className="mb-6"><span className="font-bold text-[#9c7d2c] uppercase tracking-wider">PODERES:</span> Por este instrumento particular de procuração, constituo meus procuradores outorgados, concedendo-lhe os poderes inerentes da cláusula, poderes da cláusulas ad judicia e especiais, representar o outorgante perante a qualquer Tribunal de Justiça do Brasil, STF, STJ, TRT, TRF, podendo propor qualquer tipo de ação, podendo ainda para tanto praticar os atos de acordar, discordar, transigir, negociar, juntar, dar quitação e receber, receber os honorários contratuais separadamente firmados de trinta por cento do valor de qualquer indenização deste processo diretamente no processo incluindo juros e correção monetária, firmar compromissos, concordar e impugnar cálculos, renunciar e desistir, substabelecer com ou sem reservas de poderes, sendo o presente instrumento de mandato oneroso e contratual, dando tudo por bom e valioso, afim de praticar todos os demais atos necessários ao fiel desempenho deste mandato.</p>
+               <p className="mb-4" dangerouslySetInnerHTML={{ __html: replace('<span class="font-bold text-[#9c7d2c] uppercase underline">OBJETO:</span> Representar o outorgante no processo N°: /NUMERO DE PROCESSO/.') }} />
+               <p className="mb-8"><span className="font-bold text-[#9c7d2c] uppercase underline">PODERES:</span> Concedo os poderes das cláusulas ad judicia e especiais, representar perante qualquer Tribunal do Brasil, propor ações, acordar, transigir, dar quitação, receber honorários contratuais de 30% diretamente no processo, firmar compromissos e substabelecer.</p>
                <div className="text-center mt-12 space-y-12">
                   <p className="font-bold text-[9.5px]" dangerouslySetInnerHTML={{ __html: replace('/CIDADE/, /DIA/ de /MÊS/ de /ANO/.') }} />
                   <div className="flex flex-col items-center">
                     <div className="w-56 border-t border-black mb-1"></div>
                     <p className="font-black uppercase text-[9px]" dangerouslySetInnerHTML={{ __html: replace('/NOME/') }} />
-                    <p className="text-[6.5px] font-bold text-gray-400 uppercase tracking-widest">(Outorgante)</p>
+                    <p className="text-[6.5px] font-bold text-gray-400 uppercase tracking-widest">(OUTORGANTE)</p>
                   </div>
                </div>
             </div>
@@ -294,14 +347,14 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
           <PageWrapper>
             <div className="text-[10.5px] leading-[1.7] text-gray-800 text-justify">
                <h1 className="text-center font-black text-xs mb-10 underline uppercase tracking-widest">DECLARAÇÃO DE HIPOSSUFICIÊNCIA</h1>
-               <p className="mb-7" dangerouslySetInnerHTML={{ __html: replace('Eu, /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF/MF de nº /CPF/, residente e domiciliado em /Rua/, /COMPLEMENTO/, - CEP: /CEP/, DECLARO, para os devidos fins, sob as penas da lei, que não possuo condições financeiras de arcar com as custas processuais e honorários advocatícios sem prejuízo do meu sustento e de minha família, razão pela qual requeiro os benefícios da justiça gratuita, nos termos do artigo 98 do Código de Processo Civil.') }} />
+               <p className="mb-7" dangerouslySetInnerHTML={{ __html: replace('Eu, /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF/MF de nº /CPF/, residente em /Rua/, /COMPLEMENTO/, DECLARO que não possuo condições de arcar com as custas processuais sem prejuízo do meu sustento, requerendo a gratuidade de justiça conforme artigo 98 do CPC.') }} />
                <p className="mb-10 text-center font-medium italic text-gray-500">Por ser expressão da verdade, firmo a presente.</p>
                <div className="text-center mt-24 space-y-16">
                   <p className="font-bold uppercase text-[9.5px] tracking-widest" dangerouslySetInnerHTML={{ __html: replace('/ESTADO/, /DIA/ de /MÊS/ de /ANO/.') }} />
                   <div className="flex flex-col items-center">
                     <div className="w-64 border-t border-black mb-1.5"></div>
                     <p className="font-black uppercase text-[10px] tracking-widest" dangerouslySetInnerHTML={{ __html: replace('/NOME/') }} />
-                    <p className="text-[7.5px] font-bold text-gray-400 uppercase tracking-widest">(Outorgante)</p>
+                    <p className="text-[7.5px] font-bold text-gray-400 uppercase tracking-widest">(OUTORGANTE)</p>
                   </div>
                </div>
             </div>
@@ -311,7 +364,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
     }
   };
 
-  return <div className="flex flex-col items-center w-full space-y-10 pb-20">{renderContract()}</div>;
+  return <div className="flex flex-col items-center w-full space-y-10 pb-20 print:space-y-0 print:pb-0 print:block">{renderContract()}</div>;
 };
 
 export default PDFPreview;
