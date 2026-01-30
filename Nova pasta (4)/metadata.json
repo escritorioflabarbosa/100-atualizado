@@ -1,8 +1,0 @@
-{
-  "name": "PERFEITO",
-  "description": "Uma plataforma jurídica de geração automática de contratos com preview em tempo real e integração de IA para revisão jurídica.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone"
-  ]
-}
