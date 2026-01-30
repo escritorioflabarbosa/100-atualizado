@@ -34,57 +34,49 @@
       @media print {
         @page {
           size: A4;
-          margin: 0; /* Margem zero para controle total via CSS */
+          margin: 0; /* Controle total via CSS do componente */
         }
         
+        /* Reseta tudo para garantir que nada da UI vaze */
         html, body {
           width: 210mm;
-          height: 100%;
+          min-height: 297mm;
           background-color: white !important;
           margin: 0 !important;
           padding: 0 !important;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
+          overflow: visible !important;
         }
 
-        #root {
-          display: block !important;
-          width: 100% !important;
-        }
-
-        /* Esconde UI da aplicação */
-        header, nav, aside, .no-print, button, .tabs-container, .fixed-action-btn, #root > div > header, #root > div > nav, #root > div > div > aside {
+        /* Oculta agressivamente elementos de UI */
+        nav, header, aside, footer, button, .no-print, .fixed-action-btn, .tabs-container {
           display: none !important;
         }
 
-        /* Ajuste do Main para impressão */
-        main {
+        /* Garante que o root e o main permitam o fluxo */
+        #root, main {
           display: block !important;
-          padding: 0 !important;
-          margin: 0 !important;
-          background: white !important;
-          width: 210mm !important;
-          height: auto !important;
-          overflow: visible !important;
           position: static !important;
+          width: 100% !important;
+          height: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+          overflow: visible !important;
         }
 
-        /* Reseta transformações de zoom e sombras */
+        /* Classe específica para o container do contrato na impressão */
         .print-container {
-          transform: none !important;
           width: 210mm !important;
-          min-height: 297mm !important;
           margin: 0 !important;
           padding: 0 !important;
           box-shadow: none !important;
           border: none !important;
           background: white !important;
+          transform: none !important; /* Remove o scale do preview */
         }
         
-        .page-break {
-            page-break-after: always;
-        }
-
         /* Suporte para repetição de cabeçalho/rodapé em tabelas */
         thead { display: table-header-group; }
         tfoot { display: table-footer-group; }
@@ -93,6 +85,11 @@
         .break-inside-avoid {
           break-inside: avoid;
           page-break-inside: avoid;
+        }
+
+        /* Garante tipografia preta pura para impressão */
+        .text-gray-900, .text-gray-800, p {
+          color: #000 !important;
         }
       }
     </style>
