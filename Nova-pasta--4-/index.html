@@ -33,9 +33,10 @@
       
       @media print {
         @page {
-          margin: 0;
-          size: A4 portrait;
+          size: A4;
+          margin: 10mm 10mm 10mm 10mm; /* Margem mínima para impressoras */
         }
+        
         html, body {
           width: 210mm;
           height: auto !important;
@@ -43,48 +44,49 @@
           margin: 0 !important;
           padding: 0 !important;
           -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
           overflow: visible !important;
         }
-        #root, #root > div {
-          height: auto !important;
+
+        #root {
           display: block !important;
-          overflow: visible !important;
         }
-        #root > div > nav,
-        header,
-        aside,
-        .tabs-container,
-        footer,
-        .no-print,
-        button,
-        .fixed-action-btn {
+
+        /* Esconde UI da aplicação */
+        header, nav, aside, .no-print, button, .tabs-container, .fixed-action-btn, #root > div > header, #root > div > nav {
           display: none !important;
         }
+
+        /* Ajuste do Main para impressão */
         main {
           display: block !important;
           padding: 0 !important;
           margin: 0 !important;
-          overflow: visible !important;
-          background-color: white !important;
+          background: white !important;
           width: 100% !important;
           height: auto !important;
+          overflow: visible !important;
           position: static !important;
         }
-        /* Força a escala 1 na impressão para evitar borrões ou cortes por zoom */
+
+        /* Reseta transformações de zoom */
         .print-scale-fix {
           transform: none !important;
-          top: auto !important;
-          left: auto !important;
-          position: static !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
           box-shadow: none !important;
           border: none !important;
-          width: 100% !important;
-          height: auto !important;
-          display: block !important;
         }
-        .page-break {
-          page-break-after: always !important;
-          break-after: page !important;
+
+        /* Suporte para repetição de cabeçalho/rodapé em tabelas */
+        thead { display: table-header-group; }
+        tfoot { display: table-footer-group; }
+        
+        /* Evita quebra dentro de elementos importantes */
+        .break-inside-avoid {
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
       }
     </style>
