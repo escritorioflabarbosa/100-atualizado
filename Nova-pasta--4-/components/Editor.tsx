@@ -305,7 +305,8 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
           </div>
         </aside>
 
-        <main className={`${mobileView === 'PREVIEW' ? 'flex' : 'hidden md:flex'} flex-1 bg-gray-200/50 overflow-y-auto p-4 md:p-10 flex-col items-center print:bg-white print:p-0`}>
+        {/* Change background color for better contrast with white pages */}
+        <main className={`${mobileView === 'PREVIEW' ? 'flex' : 'hidden md:flex'} flex-1 bg-gray-600 overflow-y-auto p-4 md:p-10 flex-col items-center print:bg-white print:p-0`}>
           <div className="mb-8 bg-white/80 backdrop-blur-md p-1 rounded-xl border border-gray-100 flex items-center shadow-lg w-full max-w-sm overflow-x-auto shrink-0 sticky top-0 z-10">
             {['Honorários', 'Procuração', 'Hipo'].map((tab, idx) => (
               <button key={tab} onClick={() => setActiveTab(idx)} className={`flex-1 px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all tracking-widest ${activeTab === idx ? 'bg-black text-white shadow-md' : 'text-gray-400 hover:bg-gray-50'}`}>
