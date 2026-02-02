@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { MapPin, Phone, Mail, Globe } from 'lucide-react';
 
 interface PDFPreviewProps {
   type: 'PF_HONORARIOS' | 'PF_PROCURACAO' | 'PF_HIPO' | 'PJ_HONORARIOS' | 'PJ_PROCURACAO' | 'PARTNERSHIP';
@@ -88,81 +89,111 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       '/ANO/': data.data?.split('-')[0] || new Date().getFullYear().toString(),
     };
     Object.entries(mappings).forEach(([placeholder, value]) => {
-      const displayValue = `<span class="font-bold text-black border-b border-gray-400 px-0.5">${value}</span>`;
+      const displayValue = `<strong>${value}</strong>`;
       result = result.replace(new RegExp(placeholder, 'g'), displayValue);
     });
     return result;
   };
 
-  // --- Componentes de UI ---
-  const Header = () => (
-    <div className="flex flex-col items-center mb-6 w-full">
-      <div className="text-3xl font-black text-[#9c7d2c] tracking-tighter leading-none">FB</div>
-      <div className="text-[8px] tracking-[0.4em] text-[#9c7d2c] font-bold uppercase mt-1">Advocacia</div>
-      <div className="w-full max-w-[200px] h-[1px] bg-gradient-to-r from-transparent via-[#9c7d2c]/50 to-transparent mt-3"></div>
+  // --- Visual Components ---
+
+  const FBLogo = () => (
+    <div className="flex flex-col items-center justify-center">
+       <div className="relative w-16 h-16 flex items-center justify-center">
+          <span className="font-contract text-6xl font-bold text-[#b8860b] absolute left-0 z-10" style={{ textShadow: '2px 2px 0px white' }}>F</span>
+          <span className="font-contract text-6xl font-bold text-black absolute left-6 top-1 z-0">B</span>
+       </div>
+       <div className="text-[10px] tracking-[0.3em] font-bold text-[#b8860b] mt-1 uppercase">Advocacia</div>
     </div>
   );
 
-  const Footer: React.FC<{ pageNum: number, totalPages: number }> = ({ pageNum, totalPages }) => (
-    <div className="mt-auto pt-2 border-t border-gray-200 flex justify-between items-end text-[7px] text-gray-500 font-medium uppercase tracking-wider w-full">
-      <div className="space-y-0.5 text-left leading-tight">
-        <p>Av. Maria Teresa, 75, sala 328</p>
-        <p>Campo Grande - Rio de Janeiro/RJ</p>
-        <p className="lowercase">juridico@flafsonadvocacia.com</p>
+  const Header = () => (
+    <div className="absolute top-0 left-0 w-full pt-4 z-20">
+      {/* Golden Swoosh Simulation */}
+      <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-[#8B6508] via-[#FFD700] to-[#8B6508]"></div>
+      <div className="absolute top-3 left-0 w-full h-1 bg-black"></div>
+      
+      <div className="flex justify-center mt-6 mb-8">
+        <FBLogo />
       </div>
-      <div className="text-right leading-tight">
-        <p className="font-black text-gray-900 text-[8px]">Flafson Barbosa</p>
-        <p className="font-bold text-[#9c7d2c]">ADVOGADO | OAB/RJ: 213.777</p>
-        <p className="mt-1 text-[6px] text-gray-400">Página {pageNum} de {totalPages}</p>
+    </div>
+  );
+
+  const Footer = ({ pageNum, totalPages }: { pageNum: number, totalPages: number }) => (
+    <div className="absolute bottom-0 left-0 w-full z-20">
+      <div className="flex justify-between items-end px-12 pb-3 mb-1.5">
+        <div className="text-[7px] text-gray-600 space-y-0.5 font-medium">
+          <div className="flex items-center space-x-1"><MapPin className="w-2.5 h-2.5 text-[#b8860b]" /> <span>Av. Maria Teresa, nº 75, sala 328 – Edifício Business Completo - Campo Grande – Rio de Janeiro/RJ</span></div>
+          <div className="flex items-center space-x-3">
+             <div className="flex items-center space-x-1"><Phone className="w-2.5 h-2.5 text-[#b8860b]" /> <span>(21) 99173-5421</span></div>
+             <div className="flex items-center space-x-1"><Mail className="w-2.5 h-2.5 text-[#b8860b]" /> <span>juridico@flafsonadvocacia.com</span></div>
+             <div className="flex items-center space-x-1"><Globe className="w-2.5 h-2.5 text-[#b8860b]" /> <span>www.flafsonadvocacia.com</span></div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="font-bold text-[9px] text-black">Flafson Barbosa</div>
+          <div className="font-bold text-[7px] text-black uppercase">ADVOGADO | OAB/RJ: 213.777</div>
+        </div>
       </div>
+      {/* Yellow bottom bar */}
+      <div className="w-full h-1.5 bg-[#FFD700]"></div>
+    </div>
+  );
+
+  const Watermark = () => (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+       <div className="font-contract font-bold text-[400px] text-gray-100 opacity-60 leading-none select-none flex items-center justify-center transform -translate-y-10">
+          <span className="text-[#e5e7eb]">f</span>
+          <span className="text-[#e5e7eb] -ml-20">B</span>
+       </div>
     </div>
   );
 
   const PaymentTable = () => (
-    <div className="mt-2 border border-gray-300 rounded-lg overflow-hidden mb-2">
-      <div className="bg-gray-100 px-3 py-1 border-b border-gray-300">
-        <h4 className="text-[9px] font-black uppercase tracking-widest text-black text-center">Demonstrativo Financeiro</h4>
+    <div className="mt-4 border border-gray-300 rounded overflow-hidden mb-4 bg-white/90 relative z-10 text-[10px]">
+      <div className="bg-gray-100 px-3 py-1.5 border-b border-gray-300">
+        <h4 className="font-bold uppercase tracking-widest text-black text-center">Demonstrativo Financeiro</h4>
       </div>
-      <table className="w-full text-[9px]">
+      <table className="w-full">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
-            <th className="px-3 py-1 text-left font-bold text-gray-600 uppercase">Descrição</th>
-            <th className="px-3 py-1 text-center font-bold text-gray-600 uppercase">Vencimento</th>
-            <th className="px-3 py-1 text-right font-bold text-gray-600 uppercase">Valor</th>
+            <th className="px-3 py-1.5 text-left font-bold text-gray-700 uppercase">Descrição</th>
+            <th className="px-3 py-1.5 text-center font-bold text-gray-700 uppercase">Vencimento</th>
+            <th className="px-3 py-1.5 text-right font-bold text-gray-700 uppercase">Valor</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {isSinglePayment ? (
             <tr>
-              <td className="px-3 py-1 font-semibold text-gray-800">Pagamento Único</td>
-              <td className="px-3 py-1 text-center text-gray-700">
-                {formatDateString(data.dataEntrada)} <span className="text-[7px] uppercase text-gray-500 ml-1">({data.formaPagamento})</span>
+              <td className="px-3 py-1.5 font-medium text-gray-900">Pagamento Único</td>
+              <td className="px-3 py-1.5 text-center text-gray-700">
+                {formatDateString(data.dataEntrada)}
               </td>
-              <td className="px-3 py-1 text-right font-black text-gray-900">{formatCurrency(data.valorTotal)}</td>
+              <td className="px-3 py-1.5 text-right font-bold text-black">{formatCurrency(data.valorTotal)}</td>
             </tr>
           ) : (
             <>
               <tr>
-                <td className="px-3 py-1 font-semibold text-gray-800">Entrada</td>
-                <td className="px-3 py-1 text-center text-gray-700">
-                  {formatDateString(data.dataEntrada)} <span className="text-[7px] uppercase text-gray-500 ml-1">({data.formaPagamentoEntrada})</span>
+                <td className="px-3 py-1.5 font-medium text-gray-900">Entrada</td>
+                <td className="px-3 py-1.5 text-center text-gray-700">
+                  {formatDateString(data.dataEntrada)}
                 </td>
-                <td className="px-3 py-1 text-right font-black text-gray-900">{formatCurrency(data.entrada)}</td>
+                <td className="px-3 py-1.5 text-right font-bold text-black">{formatCurrency(data.entrada)}</td>
               </tr>
               {parseInt(data.vezesParcelas) > 0 && (
                 <tr>
-                  <td className="px-3 py-1 font-semibold text-gray-800">{data.vezesParcelas}x Parcelas</td>
-                  <td className="px-3 py-1 text-center text-gray-700">
-                    Dia {data.dataPagamentoParcelas || '--'} <span className="text-[7px] uppercase text-gray-500 ml-1">({data.formaPagamento})</span>
+                  <td className="px-3 py-1.5 font-medium text-gray-900">{data.vezesParcelas}x Parcelas</td>
+                  <td className="px-3 py-1.5 text-center text-gray-700">
+                    Dia {data.dataPagamentoParcelas || '--'}
                   </td>
-                  <td className="px-3 py-1 text-right font-black text-gray-900">{formatCurrency(data.valorParcela)}</td>
+                  <td className="px-3 py-1.5 text-right font-bold text-black">{formatCurrency(data.valorParcela)}</td>
                 </tr>
               )}
             </>
           )}
-          <tr className="bg-gray-50/50">
-            <td colSpan={2} className="px-3 py-1 text-right font-black uppercase text-[8px] text-gray-500">Total do Contrato</td>
-            <td className="px-3 py-1 text-right font-black text-gray-900">{formatCurrency(data.valorTotal)}</td>
+          <tr className="bg-gray-50">
+            <td colSpan={2} className="px-3 py-1.5 text-right font-bold uppercase text-gray-600">Total</td>
+            <td className="px-3 py-1.5 text-right font-black text-black">{formatCurrency(data.valorTotal)}</td>
           </tr>
         </tbody>
       </table>
@@ -170,19 +201,19 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
   );
 
   const Signatures: React.FC<{ outorganteLabel?: string }> = ({ outorganteLabel = 'OUTORGANTE' }) => (
-    <div className="mt-8 text-center space-y-6">
-        <p className="font-bold text-[10px]" dangerouslySetInnerHTML={{ __html: replace('/ESTADO/, /DIA/ de /MÊS/ de /ANO/.') }} />
-        <div className="flex justify-around items-end pt-2">
-          <div className="text-center space-y-0.5">
-            <div className="w-48 border-t border-black"></div>
-            <p className="text-[10px] font-black uppercase max-w-[200px] truncate" dangerouslySetInnerHTML={{ __html: replace(type.includes('PJ') ? '/NOME DA EMPRESA/' : '/NOME/') }}></p>
-            <p className="text-[8px] text-gray-900 font-bold uppercase tracking-widest">({outorganteLabel})</p>
+    <div className="mt-12 text-center space-y-8 relative z-10">
+        <p className="font-medium text-[11px] uppercase" dangerouslySetInnerHTML={{ __html: replace('/ESTADO/, /DIA/ de /MÊS/ de /ANO/.') }} />
+        
+        <div className="flex flex-col items-center pt-4 space-y-8">
+          <div className="text-center space-y-1 w-full max-w-sm">
+            <div className="border-b border-black w-full mb-1"></div>
+            <p className="text-[11px] font-bold uppercase" dangerouslySetInnerHTML={{ __html: replace(type.includes('PJ') ? '/NOME DA EMPRESA/' : '/NOME/') }}></p>
+            <p className="text-[9px] text-gray-600 font-bold uppercase">({outorganteLabel})</p>
           </div>
-        </div>
-        <div className="flex justify-around items-end pt-2">
-          <div className="text-center space-y-0.5">
-            <p className="text-[10px] font-black uppercase text-black">FLAFSON BORGES BARBOSA</p>
-            <p className="text-[8px] text-black font-bold uppercase">OAB/RJ 213.777</p>
+
+          <div className="text-center space-y-1 w-full max-w-sm">
+             <div className="text-[11px] font-black uppercase text-black">FLAFSON BORGES BARBOSA</div>
+             <p className="text-[9px] text-black font-bold uppercase">OAB/RJ 213.777</p>
           </div>
         </div>
     </div>
@@ -192,25 +223,30 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
   const generateBlocks = (): ContentBlock[] => {
     const blocks: ContentBlock[] = [];
     
-    // CALIBRAGEM DE CUSTOS (Unidades arbitrárias baseadas na altura renderizada)
-    // Reduzido o custo base para permitir mais texto por página
-    const addP = (html: string, manualCost?: number) => {
-        // Custo = Base + Fator de comprimento. 
-        // Reduzi o fator de 0.45 para 0.40 para compactar.
-        const estimatedCost = manualCost || (html.length * 0.40 + 50); 
+    // Header spacer (approx 150px height reserved)
+    blocks.push({ type: 'SPACER', cost: 180 }); 
+
+    const addP = (html: string) => {
+        // Custo muito reduzido para permitir mais texto. 11px font size ~= 15px height.
+        // Assumindo ~100 chars por linha em A4.
+        const lines = Math.ceil(html.length / 100) || 1;
+        const estimatedCost = lines * 18 + 10; // 18px line height + gap
         blocks.push({ type: 'PARAGRAPH', html: replace(html), cost: estimatedCost });
     };
-    const addTitle = (text: string) => blocks.push({ type: 'TITLE', content: text, cost: 110 });
+    const addTitle = (text: string) => blocks.push({ type: 'TITLE', content: text, cost: 50 });
     
-    // Page Capacity with 15mm margins => Safe limit ~3800 (Aumentado para preencher mais)
+    // Page Height Logic
+    // A4 Height ~1123px (96dpi). 
+    // Header/Footer take ~250px total. 
+    // Content area ~850px.
+    // Usaremos uma escala de custo onde 1px = 1 unidade.
 
     if (type === 'PF_HONORARIOS' || type === 'PJ_HONORARIOS') {
       const isPJ = type === 'PJ_HONORARIOS';
-      blocks.push({ type: 'HEADER', content: isPJ ? 'CONTRATO DE HONORÁRIOS (PJ)' : 'CONTRATO DE HONORÁRIOS ADVOCATÍCIOS', cost: 150 });
+      blocks.push({ type: 'HEADER', content: 'CONTRATO DE HONORÁRIOS ADVOCATÍCIOS', cost: 60 });
       
       if (isPJ) {
-        addP('<strong>CONTRATANTE:</strong> /NOME DA EMPRESA/, CNPJ: /CNPJ DA EMPRESA/, sede: /ENDEREÇO DE EMPRESA/, /BAIRRO DO REPRESENTANDE/, /CIDADE DA SEDE/ - /ESTADO DA CEP/.');
-        addP('<strong>REPRESENTANTE LEGAL:</strong> /NOME DO REPRESENTANTE/, /NACIONALIDADE/, /PROFISSÃO/, /ESTADO CIVIL/, CPF: /CPF/, endereço: /ENDEREÇO DO REPRESENTANDE/, /CIDADE DO REPRESENTANTE/.');
+        addP('<strong>OUTORGANTE:</strong> /NOME DA EMPRESA/, CNPJ: /CNPJ DA EMPRESA/, com sede em /ENDEREÇO DE EMPRESA/, /BAIRRO DO REPRESENTANDE/, /CIDADE DA SEDE/ - /ESTADO DA CEP/, neste ato representada por <strong>/NOME DO REPRESENTANTE/</strong>, /NACIONALIDADE/, /PROFISSÃO/, /ESTADO CIVIL/, CPF: /CPF/, residente em /ENDEREÇO DO REPRESENTANDE/, /CIDADE DO REPRESENTANTE/.');
       } else {
         addP('<strong>OUTORGANTE:</strong> /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF/MF de nº /CPF/, residente e domiciliado em /Rua/, /COMPLEMENTO/, - CEP: /CEP/, pelo presente instrumento particular de procuração nomeia e constitui seu advogado:');
       }
@@ -221,7 +257,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       addP('Cláusula 1ª. O presente instrumento tem como OBJETO a prestação de serviços advocatícios na ação judicial de N°: /NUMEO DE PROCESSO/ que lhe é movida a serem realizados nas instâncias ordinárias e em grau de recurso ao qual fica obrigada a parte contratante a verificar os fatos e fundamentos do processo através do site do tribunal de referência ou ir à serventia para verificar o seu processo e o ratificá-lo e não fazendo estará automaticamente ratificado o processo com seus fatos e fundamentos redigidos. Fica obrigada a parte contratante a tomar ciência do processo e seu número através do telefone do escritório ou pessoalmente ao mesmo.');
 
       addTitle('DAS ATIVIDADES');
-      addP('Cláusula 2ª. As atividades inclusas na prestação de serviço objeto deste instrumento são todas aquelas inerentes à profissão, ou seja, todos os atos inerentes ao exercício da advocacia e aqueles constantes no Estatuto da Ordem dos Advogados do Brasil, bem como os especificados no instrumento de mandato. Atividades que fazem parte além as da procuração são a de atendimento ao cliente inicial, redigir a petição inicial, fazer o cálculo, distribuição da peça judicial, atendimento ao cliente por telefone diariamente em todos os dias úteis do ano, atendimento presencial quando solicitado por e-mail suporte@flafsonadvocacia.com ou telefone acima especificado, acompanhamento do processo judicial, petições interlocutórias no processo.', 320);
+      addP('Cláusula 2ª. As atividades inclusas na prestação de serviço objeto deste instrumento são todas aquelas inerentes à profissão, ou seja, todos os atos inerentes ao exercício da advocacia e aqueles constantes no Estatuto da Ordem dos Advogados do Brasil, bem como os especificados no instrumento de mandato. Atividades que fazem parte além as da procuração são a de atendimento ao cliente inicial, redigir a petição inicial, fazer o cálculo, distribuição da peça judicial, atendimento ao cliente por telefone diariamente em todos os dias úteis do ano, atendimento presencial quando solicitado por e-mail suporte@flafsonadvocacia.com ou telefone acima especificado, acompanhamento do processo judicial, petições interlocutórias no processo.');
 
       addTitle('DOS ATOS PROCESSUAIS');
       addP('Cláusula 3ª. Havendo necessidade de contratação de outros profissionais, no decurso do processo, o CONTRATADO elaborará substabelecimento, indicando os advogados de seu conhecimento.');
@@ -230,19 +266,15 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       addP('Cláusula 4ª. As partes acordam que facultará ao CONTRATADO, o direito de realizar a cobrança dos honorários por todos os meios admitidos em direito.');
 
       addTitle('DOS HONORÁRIOS');
-      if (isSinglePayment) {
-        addP('Cláusula 5ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais, pago /ENTRADA/ de entrada, até dia /DATA DE ENTRADA/ + /VEZES DE PARCELAS/ parcelas iguais no valor de /VALOR DA PARCELA/ todo dia /DATA DE PAGAMENTO DAS PARCELAS/.');
-      } else {
-        addP('Cláusula 5ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais, pago /ENTRADA/ de entrada, até dia /DATA DE ENTRADA/ + /VEZES DE PARCELAS/ parcelas iguais no valor de /VALOR DA PARCELA/ todo dia /DATA DE PAGAMENTO DAS PARCELAS/.');
-      }
+      addP('Cláusula 5ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais, pago /ENTRADA/ de entrada, até dia /DATA DE ENTRADA/ + /VEZES DE PARCELAS/ parcelas iguais no valor de /VALOR DA PARCELA/ todo dia /DATA DE PAGAMENTO DAS PARCELAS/.');
 
-      blocks.push({ type: 'TABLE', cost: 400 }); // Table cost
+      blocks.push({ type: 'TABLE', cost: 120 });
 
       addP('Caso não pague a mensalidade ou prestação incidirá multa de 10% do valor devido e mais juros de 1% e correção pelo IGP-M ao mês (na falta do índice do IGP-M será adotado outro índice oficial que vier a ser adotado em seu lugar ou equivalente).');
       addP('Parágrafo Primeiro. Os honorários de sucumbência, que são pagos pela parte contrária, serão revertidos integralmente ao CONTRATADO.');
       addP('Parágrafo Segundo - Caso a parte rescinda o contrato de honorários o mesmo terá que enviar uma carta ao escritório com o pedido e a parte contratada ficará com os valores já pagos e os devidos do contrato, <u>por se tratar de honorários iniciais.</u>');
       addP('Parágrafo Terceiro. Caso haja morte ou incapacidade civil do CONTRATADO, seus sucessores ou representante legal receberão os honorários.');
-      addP('Parágrafo Quarto. O contratado está autorizado a receber pelo contratante e dar quitação ao processo e retirar a sua parte dos honorários (trinta porcento do total) diretamente do valor que for recebido e terá o prazo de 7 dias uteis para efetuar o pagamento do valor devido ao contratante sem incidir juros e correção monetária, a partir da confirmação da indenização recebida.', 320);
+      addP('Parágrafo Quarto. O contratado está autorizado a receber pelo contratante e dar quitação ao processo e retirar a sua parte dos honorários (trinta porcento do total) diretamente do valor que for recebido e terá o prazo de 7 dias uteis para efetuar o pagamento do valor devido ao contratante sem incidir juros e correção monetária, a partir da confirmação da indenização recebida.');
       addP('Parágrafo Quinto. Caso tenha que pagar Imposto de Renda ou qualquer outro imposto ou que o mesmo seja automaticamente deduzido no valor que receba de indenizações materiais, morais ou qualquer outra natureza os mesmos serão pagos exclusivamente pela parte contratante.');
       addP('Cláusula 6ª. Havendo acordo entre o CONTRATANTE e a parte contrária, tal fato não prejudicará o recebimento dos honorários contratados e da sucumbência.');
       addP('Cláusula 7ª. O CONTRATANTE concorda que os honorários advocatícios referentes às custas iniciais dos serviços prestados serão pagos de forma antecipada, no caso de formalização de qualquer acordo. O valor total dos honorários será estipulado na clausula 5°, e deverá ser quitado antes da celebração do referido acordo.');
@@ -257,23 +289,24 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       addP('Cláusula 10ª. Para dirimir quaisquer controvérsias oriundas do CONTRATO, as partes elegem o foro do Centro da Cidade (comarca da capital) da comarca do Rio de Janeiro, Rio de Janeiro.');
       addP('Por estarem assim justos e contratados, firmam o presente instrumento, em duas vias de igual teor.');
 
-      blocks.push({ type: 'SIGNATURES', cost: 400 });
+      blocks.push({ type: 'SIGNATURES', cost: 180 });
     } else if (type === 'PF_PROCURACAO' || type === 'PJ_PROCURACAO') {
-       blocks.push({ type: 'HEADER', content: 'PROCURAÇÃO AD JUDICIA', cost: 150 });
+       blocks.push({ type: 'HEADER', content: 'PROCURAÇÃO AD JUDICIA', cost: 60 });
        const isPJ = type === 'PJ_PROCURACAO';
        const procuracaoText = isPJ 
           ? '<strong>OUTORGANTE:</strong> /NOME DA EMPRESA/, CNPJ: /CNPJ/, sede: /ENDEREÇO DA SEDE/, /CIDADE DA SEDE/ - /ESTADO DA CEP/, neste ato representada por /NOME/.'
           : '<strong>OUTORGANTE:</strong> /NOME/, /ESTADO CIVIL/, /PROFISSÃO/, /NACIONALIDADE/, CPF: /CPF/, residente em /Rua/, /COMPLEMENTO/, /CIDADE/ - /ESTADO/.';
        addP(procuracaoText);
        addP('<strong>OUTORGADO:</strong> FLAFSON BORGES BARBOSA, OAB/RJ 213.777, com escritório na Av. Maria Teresa, 75, sala 328, Campo Grande - RJ, CEP: 23.050-160.');
-       addP('<span class="font-bold text-[#9c7d2c] uppercase underline">OBJETO:</span> Atuação específica no processo N°: /NUMERO DE PROCESSO/.');
-       addP('<span class="font-bold text-[#9c7d2c] uppercase underline">PODERES:</span> Pelo presente instrumento, o(a) outorgante confere ao outorgado os poderes da cláusula "ad judicia et extra" para o foro em geral, podendo propor ações, contestar, recorrer, transigir, firmar compromissos, receber e dar quitação, levantar RPVs e Alvarás, bem como substabelecer, com ou sem reserva de poderes.', 280);
-       blocks.push({ type: 'SIGNATURES', cost: 400 });
+       addP('<strong>OBJETO:</strong> Representar o outorgante no processo judicial de revisão de cláusulas contratuais de N°: /NUMERO DE PROCESSO/, promovendo a defesa dos seus direitos e interesses, podendo, para tanto, propor quaisquer ações, medidas incidentais, acompanhar processos administrativos e/ou judiciais em qualquer Juízo, Instância, Tribunal ou Repartição Pública.');
+       addP('<strong>PODERES:</strong> Por este instrumento particular de procuração, constituo meus procuradores outorgados, concedendo-lhe os poderes inerentes da cláusula, poderes da cláusulas ad judicia e especiais, representar o outorgante perante a qualquer Tribunal de Justiça do Brasil, STF, STJ, TRT, TRF, podendo propor qualquer tipo de ação, podendo ainda para tanto praticar os atos de acordar, discordar, transigir, negociar, juntar, dar quitação e receber, receber os honorários contratuais separadamente firmados de trinta por cento do valor de qualquer indenização deste processo diretamente no processo incluindo juros e correção monetária, firmar compromissos, concordar e impugnar cálculos, renunciar e desistir, substabelecer com ou sem reservas de poderes, sendo o presente instrumento de mandato oneroso e contratual, dando tudo por bom e valioso, afim de praticar todos os demais atos necessários ao fiel desempenho deste mandato.');
+       blocks.push({ type: 'SIGNATURES', cost: 180 });
     } else if (type === 'PF_HIPO') {
-       blocks.push({ type: 'HEADER', content: 'DECLARAÇÃO DE HIPOSSUFICIÊNCIA', cost: 150 });
-       addP('Eu, <strong>/NOME/</strong>, /NACIONALIDADE/, /ESTADO CIVIL/, /PROFISSÃO/, inscrito(a) no CPF sob o nº /CPF/, residente e domiciliado(a) em /Rua/, /COMPLEMENTO/ - CEP: /CEP/, /CIDADE/ - /ESTADO/, <strong>DECLARO</strong>, para os devidos fins e sob as penas da lei, não possuir condições financeiras de arcar com as custas processuais e honorários advocatícios sem prejuízo do meu próprio sustento e de minha família.', 300);
-       addP('Por ser expressão da verdade, firmo a presente declaração para requerer os benefícios da Justiça Gratuita, nos termos do art. 98 e seguintes do Código de Processo Civil e art. 5º, LXXIV, da Constituição Federal.');
-       blocks.push({ type: 'SIGNATURES', cost: 400 });
+       blocks.push({ type: 'HEADER', content: 'DECLARAÇÃO DE HIPOSSUFICIÊNCIA', cost: 60 });
+       addP('Eu, <strong>/NOME/</strong>, /NACIONALIDADE/, /ESTADO CIVIL/, /PROFISSÃO/, inscrito(a) no CPF sob o nº /CPF/, residente e domiciliado(a) em /Rua/, /COMPLEMENTO/ - CEP: /CEP/, /CIDADE/ - /ESTADO/,');
+       addP('<strong>DECLARO</strong>, para os devidos fins e sob as penas da lei, que não possuo condições financeiras de arcar com as custas processuais e honorários advocatícios sem prejuízo do meu próprio sustento e de minha família, razão pela qual requeiro os benefícios da justiça gratuita, nos termos do artigo 98 do Código de Processo Civil.');
+       addP('Por ser expressão da verdade, firmo a presente declaração.');
+       blocks.push({ type: 'SIGNATURES', cost: 180 });
     }
 
     return blocks;
@@ -285,21 +318,33 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
     const paginated: ContentBlock[][] = [];
     let currentPage: ContentBlock[] = [];
     let currentHeight = 0;
-    // Aumentado para 3800 para preencher mais a página A4 antes de quebrar
-    const MAX_HEIGHT_PER_PAGE = 3800; 
+    // Altura útil segura: 1123px (A4) - 250px (Header/Footer) - Margens = ~800px
+    const MAX_CONTENT_HEIGHT = 800; 
 
     blocks.forEach(block => {
-      // Evita títulos órfãos no final da página (se faltar pouco espaço)
-      if (block.type === 'TITLE' && currentHeight > (MAX_HEIGHT_PER_PAGE - 500)) {
-        paginated.push(currentPage);
-        currentPage = [];
-        currentHeight = 0;
+      // Se for SPACER (header), sempre inicia página
+      if (block.type === 'SPACER') {
+        if (currentPage.length > 0) {
+            // Se já tem conteúdo, nada a fazer, o spacer conta como altura
+        }
       }
 
-      if (currentHeight + block.cost > MAX_HEIGHT_PER_PAGE) {
+      if (currentHeight + block.cost > MAX_CONTENT_HEIGHT) {
+        // Se for assinatura e estiver quase cabendo, tente espremer (aumentando limite temporário)
+        if (block.type === 'SIGNATURES' && (currentHeight + block.cost < MAX_CONTENT_HEIGHT + 100)) {
+             currentPage.push(block);
+             currentHeight += block.cost;
+             return;
+        }
+        
         paginated.push(currentPage);
         currentPage = [];
         currentHeight = 0;
+        // Nova página precisa de espaço para header se não for a primeira? 
+        // No design, header repete? Geralmente sim.
+        // Adicionando custo virtual de header em nova página
+        // currentPage.push({ type: 'SPACER', cost: 150 });
+        // currentHeight += 150;
       }
       currentPage.push(block);
       currentHeight += block.cost;
@@ -309,12 +354,11 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
     return paginated;
   }, [type, data]);
 
-  // Styles for dense text
-  const pStyle = "mb-[2px] text-justify leading-[1.15] text-[11px] text-gray-900 font-normal";
-  const hStyle = "font-black uppercase mt-4 mb-2 text-[10px] text-black tracking-wide";
+  // Styles
+  const pStyle = "mb-2 text-justify leading-snug text-[11px] text-gray-900 font-normal relative z-10";
+  const hStyle = "font-black uppercase mt-4 mb-2 text-[10px] text-black tracking-wide relative z-10";
 
   return (
-    // FIX CRÍTICO: Removido py-8 no modo print (print:p-0) para evitar margem superior indesejada
     <div className="flex flex-col items-center justify-center w-full print:block print:w-full py-8 print:p-0">
       <div 
         className="print-container relative"
@@ -332,12 +376,15 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
             }}
           >
              <Header />
+             <Watermark />
              
-             <div className="sheet-content">
+             <div className="sheet-content mt-12">
                 {pageBlocks.map((block, i) => {
                   switch(block.type) {
+                    case 'SPACER':
+                      return <div key={i} style={{ height: '110px' }}></div>;
                     case 'HEADER': 
-                      return <h1 key={i} className="text-center font-black text-sm mb-6 uppercase tracking-widest text-black">{block.content}</h1>;
+                      return <h1 key={i} className="text-center font-bold text-sm mb-6 uppercase tracking-wider text-black relative z-10">{block.content}</h1>;
                     case 'TITLE':
                       return <h2 key={i} className={hStyle}>{block.content}</h2>;
                     case 'PARAGRAPH':

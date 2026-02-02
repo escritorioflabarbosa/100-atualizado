@@ -58,7 +58,6 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
     const isSingle = ['PIX', 'CARTÃO DE CRÉDITO', 'À VISTA'].includes(currentData.formaPagamento);
     
     if (isSingle) {
-      // Limpa campos de parcelamento se for pagamento único
       if (type === 'PF_BUNDLE' && (formDataPF.vezesParcelas !== '' || formDataPF.entrada !== '')) {
         setFormDataPF(prev => ({ ...prev, vezesParcelas: '', entrada: '', valorParcela: '' }));
       }
@@ -92,12 +91,10 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
 
   const inputStyle = "w-full p-2.5 border-2 border-gray-100 rounded-xl text-[11px] font-medium focus:border-[#9c7d2c] outline-none transition-colors shadow-sm focus:bg-white";
   const labelStyle = "text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1 block";
-
   const FORMAS_PAGAMENTO = ["BOLETO BANCÁRIO", "PIX", "CARTÃO DE CRÉDITO", "TRANSFERÊNCIA BANCÁRIA", "DINHEIRO", "À VISTA"];
 
   const renderFormPJ = () => {
     const isSingle = ['PIX', 'CARTÃO DE CRÉDITO', 'À VISTA'].includes(formDataPJ.formaPagamento);
-
     return (
       <div className="space-y-6">
         <div>
@@ -142,12 +139,10 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
                 {FORMAS_PAGAMENTO.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
             </div>
-
             <div>
               <label className={labelStyle}>Valor Global</label>
               <input type="text" placeholder="R$ 0,00" className={`${inputStyle} text-xs font-black`} value={formDataPJ.valorTotal} onChange={e => handleCurrencyChange('valorTotal', e.target.value)} />
             </div>
-
             {isSingle ? (
               <div>
                 <label className={labelStyle}>Data de Pagamento</label>
@@ -191,7 +186,6 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
 
   const renderFormPF = () => {
     const isSingle = ['PIX', 'CARTÃO DE CRÉDITO', 'À VISTA'].includes(formDataPF.formaPagamento);
-
     return (
       <div className="space-y-6">
         <div>
@@ -230,12 +224,10 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
                 {FORMAS_PAGAMENTO.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
             </div>
-
             <div>
               <label className={labelStyle}>Valor Global</label>
               <input type="text" placeholder="R$ 0,00" className={`${inputStyle} text-xs font-black`} value={formDataPF.valorTotal} onChange={e => handleCurrencyChange('valorTotal', e.target.value)} />
             </div>
-
             {isSingle ? (
               <div>
                 <label className={labelStyle}>Data de Pagamento</label>
@@ -295,8 +287,9 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
         </button>
       </header>
 
-      <div className="flex flex-1 overflow-hidden relative print:overflow-visible h-[calc(100vh-3rem)]">
-        <aside className={`${mobileView === 'FORM' ? 'block' : 'hidden'} md:block w-full md:w-[360px] border-r bg-white overflow-y-auto p-6 md:p-7 scrollbar-none shadow-xl z-10 shrink-0`}>
+      {/* Ajuste crítico: Remove height 100vh na impressão para permitir rolagem de páginas */}
+      <div className="flex flex-1 overflow-hidden relative print:overflow-visible print:block print:h-auto h-[calc(100vh-3rem)]">
+        <aside className={`${mobileView === 'FORM' ? 'block' : 'hidden'} md:block w-full md:w-[360px] border-r bg-white overflow-y-auto p-6 md:p-7 scrollbar-none shadow-xl z-10 shrink-0 print:hidden`}>
           {type === 'PF_BUNDLE' ? renderFormPF() : renderFormPJ()}
           <div className="md:hidden mt-10">
             <button onClick={() => setMobileView('PREVIEW')} className="w-full py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center">
@@ -305,8 +298,8 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
           </div>
         </aside>
 
-        {/* Change background color for better contrast with white pages */}
-        <main className={`${mobileView === 'PREVIEW' ? 'flex' : 'hidden md:flex'} flex-1 bg-gray-100 overflow-y-auto p-4 md:p-10 flex-col items-center print:bg-white print:p-0`}>
+        {/* Ajuste crítico: print:block e print:h-auto para o container principal */}
+        <main className={`${mobileView === 'PREVIEW' ? 'flex' : 'hidden md:flex'} flex-1 bg-gray-100 overflow-y-auto p-4 md:p-10 flex-col items-center print:bg-white print:p-0 print:block print:h-auto print:w-full print:static`}>
           <div className="mb-8 bg-white/80 backdrop-blur-md p-1 rounded-xl border border-gray-100 flex items-center shadow-lg w-full max-w-sm overflow-x-auto shrink-0 sticky top-0 z-10 print:hidden">
             {['Honorários', 'Procuração', 'Hipo'].map((tab, idx) => (
               <button key={tab} onClick={() => setActiveTab(idx)} className={`flex-1 px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all tracking-widest ${activeTab === idx ? 'bg-black text-white shadow-md' : 'text-gray-400 hover:bg-gray-50'}`}>
@@ -314,7 +307,7 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
               </button>
             ))}
           </div>
-          <div className="w-full flex justify-center items-start pb-32">
+          <div className="w-full flex justify-center items-start pb-32 print:pb-0">
              <PDFPreview 
                 type={activeTab === 0 ? (type === 'PJ_BUNDLE' ? 'PJ_HONORARIOS' : 'PF_HONORARIOS') : activeTab === 1 ? (type === 'PJ_BUNDLE' ? 'PJ_PROCURACAO' : 'PF_PROCURACAO') : 'PF_HIPO'} 
                 data={type === 'PF_BUNDLE' ? formDataPF : formDataPJ} 
