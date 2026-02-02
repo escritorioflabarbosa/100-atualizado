@@ -325,7 +325,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
         {pages.map((pageBlocks, pageIndex) => (
           <div 
             key={pageIndex}
-            className="sheet font-contract origin-top-left bg-white"
+            className="sheet font-contract origin-top-left bg-white print:transform-none print:w-full"
             style={{ 
               transform: `scale(${finalScale})`,
               transformOrigin: 'top left',
