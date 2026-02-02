@@ -191,17 +191,18 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
   // --- Geração de Blocos de Conteúdo ---
   const generateBlocks = (): ContentBlock[] => {
     const blocks: ContentBlock[] = [];
-    // Ajuste de custo: Aumentado para refletir melhor o espaço ocupado
+    
+    // CALIBRAGEM DE CUSTOS (Unidades arbitrárias baseadas na altura renderizada)
+    // Reduzido o custo base para permitir mais texto por página
     const addP = (html: string, manualCost?: number) => {
-        // Custo base + comprimento do texto
-        const estimatedCost = manualCost || (html.length * 0.45 + 60); 
+        // Custo = Base + Fator de comprimento. 
+        // Reduzi o fator de 0.45 para 0.40 para compactar.
+        const estimatedCost = manualCost || (html.length * 0.40 + 50); 
         blocks.push({ type: 'PARAGRAPH', html: replace(html), cost: estimatedCost });
     };
-    const addTitle = (text: string) => blocks.push({ type: 'TITLE', content: text, cost: 130 });
+    const addTitle = (text: string) => blocks.push({ type: 'TITLE', content: text, cost: 110 });
     
-    // Header Cost = ~300
-    // Footer Cost = ~200
-    // Page Capacity with 15mm margins (approx 1000px height) => Safe limit ~3600
+    // Page Capacity with 15mm margins => Safe limit ~3800 (Aumentado para preencher mais)
 
     if (type === 'PF_HONORARIOS' || type === 'PJ_HONORARIOS') {
       const isPJ = type === 'PJ_HONORARIOS';
@@ -220,7 +221,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       addP('Cláusula 1ª. O presente instrumento tem como OBJETO a prestação de serviços advocatícios na ação judicial de N°: /NUMEO DE PROCESSO/ que lhe é movida a serem realizados nas instâncias ordinárias e em grau de recurso ao qual fica obrigada a parte contratante a verificar os fatos e fundamentos do processo através do site do tribunal de referência ou ir à serventia para verificar o seu processo e o ratificá-lo e não fazendo estará automaticamente ratificado o processo com seus fatos e fundamentos redigidos. Fica obrigada a parte contratante a tomar ciência do processo e seu número através do telefone do escritório ou pessoalmente ao mesmo.');
 
       addTitle('DAS ATIVIDADES');
-      addP('Cláusula 2ª. As atividades inclusas na prestação de serviço objeto deste instrumento são todas aquelas inerentes à profissão, ou seja, todos os atos inerentes ao exercício da advocacia e aqueles constantes no Estatuto da Ordem dos Advogados do Brasil, bem como os especificados no instrumento de mandato. Atividades que fazem parte além as da procuração são a de atendimento ao cliente inicial, redigir a petição inicial, fazer o cálculo, distribuição da peça judicial, atendimento ao cliente por telefone diariamente em todos os dias úteis do ano, atendimento presencial quando solicitado por e-mail suporte@flafsonadvocacia.com ou telefone acima especificado, acompanhamento do processo judicial, petições interlocutórias no processo.', 350);
+      addP('Cláusula 2ª. As atividades inclusas na prestação de serviço objeto deste instrumento são todas aquelas inerentes à profissão, ou seja, todos os atos inerentes ao exercício da advocacia e aqueles constantes no Estatuto da Ordem dos Advogados do Brasil, bem como os especificados no instrumento de mandato. Atividades que fazem parte além as da procuração são a de atendimento ao cliente inicial, redigir a petição inicial, fazer o cálculo, distribuição da peça judicial, atendimento ao cliente por telefone diariamente em todos os dias úteis do ano, atendimento presencial quando solicitado por e-mail suporte@flafsonadvocacia.com ou telefone acima especificado, acompanhamento do processo judicial, petições interlocutórias no processo.', 320);
 
       addTitle('DOS ATOS PROCESSUAIS');
       addP('Cláusula 3ª. Havendo necessidade de contratação de outros profissionais, no decurso do processo, o CONTRATADO elaborará substabelecimento, indicando os advogados de seu conhecimento.');
@@ -235,13 +236,13 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
         addP('Cláusula 5ª. Fará jus o contrato o valor de /VALOR TOTAL/ de honorários iniciais, pago /ENTRADA/ de entrada, até dia /DATA DE ENTRADA/ + /VEZES DE PARCELAS/ parcelas iguais no valor de /VALOR DA PARCELA/ todo dia /DATA DE PAGAMENTO DAS PARCELAS/.');
       }
 
-      blocks.push({ type: 'TABLE', cost: 450 }); // Table cost
+      blocks.push({ type: 'TABLE', cost: 400 }); // Table cost
 
       addP('Caso não pague a mensalidade ou prestação incidirá multa de 10% do valor devido e mais juros de 1% e correção pelo IGP-M ao mês (na falta do índice do IGP-M será adotado outro índice oficial que vier a ser adotado em seu lugar ou equivalente).');
       addP('Parágrafo Primeiro. Os honorários de sucumbência, que são pagos pela parte contrária, serão revertidos integralmente ao CONTRATADO.');
       addP('Parágrafo Segundo - Caso a parte rescinda o contrato de honorários o mesmo terá que enviar uma carta ao escritório com o pedido e a parte contratada ficará com os valores já pagos e os devidos do contrato, <u>por se tratar de honorários iniciais.</u>');
       addP('Parágrafo Terceiro. Caso haja morte ou incapacidade civil do CONTRATADO, seus sucessores ou representante legal receberão os honorários.');
-      addP('Parágrafo Quarto. O contratado está autorizado a receber pelo contratante e dar quitação ao processo e retirar a sua parte dos honorários (trinta porcento do total) diretamente do valor que for recebido e terá o prazo de 7 dias uteis para efetuar o pagamento do valor devido ao contratante sem incidir juros e correção monetária, a partir da confirmação da indenização recebida.', 350);
+      addP('Parágrafo Quarto. O contratado está autorizado a receber pelo contratante e dar quitação ao processo e retirar a sua parte dos honorários (trinta porcento do total) diretamente do valor que for recebido e terá o prazo de 7 dias uteis para efetuar o pagamento do valor devido ao contratante sem incidir juros e correção monetária, a partir da confirmação da indenização recebida.', 320);
       addP('Parágrafo Quinto. Caso tenha que pagar Imposto de Renda ou qualquer outro imposto ou que o mesmo seja automaticamente deduzido no valor que receba de indenizações materiais, morais ou qualquer outra natureza os mesmos serão pagos exclusivamente pela parte contratante.');
       addP('Cláusula 6ª. Havendo acordo entre o CONTRATANTE e a parte contrária, tal fato não prejudicará o recebimento dos honorários contratados e da sucumbência.');
       addP('Cláusula 7ª. O CONTRATANTE concorda que os honorários advocatícios referentes às custas iniciais dos serviços prestados serão pagos de forma antecipada, no caso de formalização de qualquer acordo. O valor total dos honorários será estipulado na clausula 5°, e deverá ser quitado antes da celebração do referido acordo.');
@@ -256,7 +257,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       addP('Cláusula 10ª. Para dirimir quaisquer controvérsias oriundas do CONTRATO, as partes elegem o foro do Centro da Cidade (comarca da capital) da comarca do Rio de Janeiro, Rio de Janeiro.');
       addP('Por estarem assim justos e contratados, firmam o presente instrumento, em duas vias de igual teor.');
 
-      blocks.push({ type: 'SIGNATURES', cost: 450 });
+      blocks.push({ type: 'SIGNATURES', cost: 400 });
     } else if (type === 'PF_PROCURACAO' || type === 'PJ_PROCURACAO') {
        blocks.push({ type: 'HEADER', content: 'PROCURAÇÃO AD JUDICIA', cost: 150 });
        const isPJ = type === 'PJ_PROCURACAO';
@@ -267,12 +268,12 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
        addP('<strong>OUTORGADO:</strong> FLAFSON BORGES BARBOSA, OAB/RJ 213.777, com escritório na Av. Maria Teresa, 75, sala 328, Campo Grande - RJ, CEP: 23.050-160.');
        addP('<span class="font-bold text-[#9c7d2c] uppercase underline">OBJETO:</span> Atuação específica no processo N°: /NUMERO DE PROCESSO/.');
        addP('<span class="font-bold text-[#9c7d2c] uppercase underline">PODERES:</span> Pelo presente instrumento, o(a) outorgante confere ao outorgado os poderes da cláusula "ad judicia et extra" para o foro em geral, podendo propor ações, contestar, recorrer, transigir, firmar compromissos, receber e dar quitação, levantar RPVs e Alvarás, bem como substabelecer, com ou sem reserva de poderes.', 280);
-       blocks.push({ type: 'SIGNATURES', cost: 450 });
+       blocks.push({ type: 'SIGNATURES', cost: 400 });
     } else if (type === 'PF_HIPO') {
        blocks.push({ type: 'HEADER', content: 'DECLARAÇÃO DE HIPOSSUFICIÊNCIA', cost: 150 });
        addP('Eu, <strong>/NOME/</strong>, /NACIONALIDADE/, /ESTADO CIVIL/, /PROFISSÃO/, inscrito(a) no CPF sob o nº /CPF/, residente e domiciliado(a) em /Rua/, /COMPLEMENTO/ - CEP: /CEP/, /CIDADE/ - /ESTADO/, <strong>DECLARO</strong>, para os devidos fins e sob as penas da lei, não possuir condições financeiras de arcar com as custas processuais e honorários advocatícios sem prejuízo do meu próprio sustento e de minha família.', 300);
        addP('Por ser expressão da verdade, firmo a presente declaração para requerer os benefícios da Justiça Gratuita, nos termos do art. 98 e seguintes do Código de Processo Civil e art. 5º, LXXIV, da Constituição Federal.');
-       blocks.push({ type: 'SIGNATURES', cost: 450 });
+       blocks.push({ type: 'SIGNATURES', cost: 400 });
     }
 
     return blocks;
@@ -284,10 +285,8 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
     const paginated: ContentBlock[][] = [];
     let currentPage: ContentBlock[] = [];
     let currentHeight = 0;
-    // Limite de altura seguro para A4 (297mm) com margem 15mm (sobra 267mm)
-    // 267mm ~= 1000px. Unidades arbitrárias calibradas para line-height 1.15
-    // Aumentado para 3600 devido ao menor line-height e menores margens
-    const MAX_HEIGHT_PER_PAGE = 3600; 
+    // Aumentado para 3800 para preencher mais a página A4 antes de quebrar
+    const MAX_HEIGHT_PER_PAGE = 3800; 
 
     blocks.forEach(block => {
       // Evita títulos órfãos no final da página (se faltar pouco espaço)
@@ -311,11 +310,12 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
   }, [type, data]);
 
   // Styles for dense text
-  const pStyle = "mb-[5px] text-justify leading-[1.15] text-[11px] text-gray-900 font-normal";
+  const pStyle = "mb-[2px] text-justify leading-[1.15] text-[11px] text-gray-900 font-normal";
   const hStyle = "font-black uppercase mt-4 mb-2 text-[10px] text-black tracking-wide";
 
   return (
-    <div className="flex flex-col items-center justify-center w-full print:block print:w-full py-8">
+    // FIX CRÍTICO: Removido py-8 no modo print (print:p-0) para evitar margem superior indesejada
+    <div className="flex flex-col items-center justify-center w-full print:block print:w-full py-8 print:p-0">
       <div 
         className="print-container relative"
         style={{ 
