@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Download, ZoomIn, ZoomOut, Building2, User, Edit3, ReceiptText, Eye, FileText } from 'lucide-react';
+import { ArrowLeft, Download, ZoomIn, ZoomOut, Building2, User, Edit3, ReceiptText, Eye, FileText, Briefcase, PlusCircle, XCircle } from 'lucide-react';
 import PDFPreview from './PDFPreview.tsx';
 import { FormDataPF, FormDataPJ, FormDataPartnership, ContractType, HistoryItem } from '../types.ts';
+import { ACTION_TYPES, PARTNER_PERCENTAGES, BRAZIL_STATES } from '../constants.tsx';
 
 interface EditorProps {
   type: ContractType;
@@ -33,6 +34,18 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
     dataPagamentoParcelas: '', formaPagamento: 'BOLETO BANCÁRIO', formaPagamentoEntrada: 'PIX',
     data: today
   });
+  
+  const [formDataPartnership, setFormDataPartnership] = useState<FormDataPartnership>({
+    gestor: 'Flafson Barbosa Borges',
+    parceiro: '',
+    oabParceiro: '',
+    clientes: [{ id: '1', nome: '', cpf: '' }],
+    tipoAcao: ACTION_TYPES[0],
+    percentual: PARTNER_PERCENTAGES[0].label,
+    estadoAssinatura: 'Rio de Janeiro',
+    dataAssinatura: today,
+  });
+
 
   const parseValue = (val: string) => {
     if (!val) return 0;
@@ -54,6 +67,8 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
   };
 
   useEffect(() => {
+    if (type !== 'PF_BUNDLE' && type !== 'PJ_BUNDLE') return;
+
     const currentData = type === 'PF_BUNDLE' ? formDataPF : formDataPJ;
     const isSingle = ['PIX', 'CARTÃO DE CRÉDITO', 'À VISTA'].includes(currentData.formaPagamento);
     
@@ -79,12 +94,24 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
     }
   }, [formDataPF.valorTotal, formDataPF.entrada, formDataPF.vezesParcelas, formDataPJ.valorTotal, formDataPJ.entrada, formDataPJ.vezesParcelas, formDataPF.formaPagamento, formDataPJ.formaPagamento, type]);
 
+  const getFormData = () => {
+    switch(type) {
+      case 'PF_BUNDLE': return formDataPF;
+      case 'PJ_BUNDLE': return formDataPJ;
+      case 'PARTNERSHIP': return formDataPartnership;
+      default: return {};
+    }
+  }
+
   const handleGeneratePDF = () => {
+    const clientName = type === 'PF_BUNDLE' ? formDataPF.nome : type === 'PJ_BUNDLE' ? formDataPJ.razaoSocial : `Parceria: ${formDataPartnership.parceiro}`;
+    const documentId = type === 'PF_BUNDLE' ? formDataPF.cpf : type === 'PJ_BUNDLE' ? formDataPJ.cnpj : formDataPartnership.oabParceiro;
+    
     onSaveToHistory({
-      client: type === 'PF_BUNDLE' ? formDataPF.nome : formDataPJ.razaoSocial,
-      document: type === 'PF_BUNDLE' ? formDataPF.cpf : formDataPJ.cnpj,
+      client: clientName,
+      document: documentId,
       type: 'Contrato Gerado',
-      fullData: type === 'PF_BUNDLE' ? formDataPF : formDataPJ
+      fullData: getFormData()
     });
     window.print();
   };
@@ -94,6 +121,7 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
   const FORMAS_PAGAMENTO = ["BOLETO BANCÁRIO", "PIX", "CARTÃO DE CRÉDITO", "TRANSFERÊNCIA BANCÁRIA", "DINHEIRO", "À VISTA"];
 
   const renderFormPJ = () => {
+    // ... (restante da função inalterada)
     const isSingle = ['PIX', 'CARTÃO DE CRÉDITO', 'À VISTA'].includes(formDataPJ.formaPagamento);
     return (
       <div className="space-y-6">
@@ -185,6 +213,7 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
   };
 
   const renderFormPF = () => {
+    // ... (restante da função inalterada)
     const isSingle = ['PIX', 'CARTÃO DE CRÉDITO', 'À VISTA'].includes(formDataPF.formaPagamento);
     return (
       <div className="space-y-6">
@@ -269,6 +298,104 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
     );
   };
 
+  const renderFormPartnership = () => {
+    const handleClientChange = (index: number, field: 'nome' | 'cpf', value: string) => {
+      const updatedClients = [...formDataPartnership.clientes];
+      updatedClients[index][field] = value;
+      setFormDataPartnership(prev => ({ ...prev, clientes: updatedClients }));
+    };
+
+    const addClient = () => {
+      setFormDataPartnership(prev => ({
+        ...prev,
+        clientes: [...prev.clientes, { id: Date.now().toString(), nome: '', cpf: '' }]
+      }));
+    };
+
+    const removeClient = (index: number) => {
+      if (formDataPartnership.clientes.length <= 1) return;
+      const updatedClients = formDataPartnership.clientes.filter((_, i) => i !== index);
+      setFormDataPartnership(prev => ({ ...prev, clientes: updatedClients }));
+    };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-[10px] font-black text-[#9c7d2c] uppercase flex items-center tracking-widest mb-3"><Briefcase className="w-4 h-4 mr-2" /> Dados da Parceria</h3>
+          <div className="space-y-2.5">
+            <input type="text" placeholder="Nome do Advogado Parceiro" className={inputStyle} value={formDataPartnership.parceiro} onChange={e => setFormDataPartnership({...formDataPartnership, parceiro: e.target.value})} />
+            <input type="text" placeholder="Nº OAB do Parceiro (Ex: RJ123456)" className={inputStyle} value={formDataPartnership.oabParceiro} onChange={e => setFormDataPartnership({...formDataPartnership, oabParceiro: e.target.value})} />
+            <div>
+              <label className={labelStyle}>Tipo de Ação</label>
+              <select className={inputStyle} value={formDataPartnership.tipoAcao} onChange={e => setFormDataPartnership({...formDataPartnership, tipoAcao: e.target.value})}>
+                {ACTION_TYPES.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelStyle}>Divisão de Honorários</label>
+              <select className={inputStyle} value={formDataPartnership.percentual} onChange={e => setFormDataPartnership({...formDataPartnership, percentual: e.target.value})}>
+                {PARTNER_PERCENTAGES.map(p => <option key={p.value} value={p.label}>{p.label}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-5 border-t border-gray-50">
+          <h3 className="text-[10px] font-black text-[#9c7d2c] uppercase flex items-center tracking-widest mb-3"><User className="w-4 h-4 mr-2" /> Clientes Abrangidos</h3>
+          <div className="space-y-2.5">
+            {formDataPartnership.clientes.map((client, index) => (
+              <div key={client.id} className="flex items-center space-x-2">
+                <input type="text" placeholder="Nome do Cliente" className={inputStyle} value={client.nome} onChange={e => handleClientChange(index, 'nome', e.target.value)} />
+                <input type="text" placeholder="CPF" className={`${inputStyle} max-w-[120px]`} value={client.cpf} onChange={e => handleClientChange(index, 'cpf', e.target.value)} />
+                <button onClick={() => removeClient(index)} disabled={formDataPartnership.clientes.length <= 1} className="p-2 text-gray-300 hover:text-red-500 disabled:opacity-30 disabled:hover:text-gray-300 transition-colors"><XCircle className="w-4 h-4" /></button>
+              </div>
+            ))}
+            <button onClick={addClient} className="w-full text-xs font-bold text-[#9c7d2c] flex items-center justify-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <PlusCircle className="w-4 h-4 mr-2" /> Adicionar Cliente
+            </button>
+          </div>
+        </div>
+
+        <div className="pt-5 border-t border-gray-50">
+           <h3 className="text-[10px] font-black text-[#9c7d2c] uppercase tracking-widest mb-3">Assinatura</h3>
+           <div className="grid grid-cols-2 gap-2.5">
+             <div>
+               <label className={labelStyle}>Estado</label>
+               <select className={inputStyle} value={formDataPartnership.estadoAssinatura} onChange={e => setFormDataPartnership({...formDataPartnership, estadoAssinatura: e.target.value})}>
+                 {BRAZIL_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+               </select>
+             </div>
+             <div>
+               <label className={labelStyle}>Data</label>
+               <input type="date" className={inputStyle} value={formDataPartnership.dataAssinatura} onChange={e => setFormDataPartnership({...formDataPartnership, dataAssinatura: e.target.value})} />
+             </div>
+           </div>
+        </div>
+      </div>
+    );
+  };
+  
+  const renderForm = () => {
+    switch(type) {
+      case 'PF_BUNDLE': return renderFormPF();
+      case 'PJ_BUNDLE': return renderFormPJ();
+      case 'PARTNERSHIP': return renderFormPartnership();
+      default: return null;
+    }
+  }
+  
+  const getPDFPreviewType = () => {
+    if (type === 'PARTNERSHIP') return 'PARTNERSHIP';
+    if (type === 'PF_BUNDLE') {
+        return activeTab === 0 ? 'PF_HONORARIOS' : activeTab === 1 ? 'PF_PROCURACAO' : 'PF_HIPO';
+    }
+    if (type === 'PJ_BUNDLE') {
+        return activeTab === 0 ? 'PJ_HONORARIOS' : 'PJ_PROCURACAO';
+    }
+    return 'PF_HONORARIOS';
+  }
+
+
   return (
     <div className="min-h-screen bg-[#f1f3f5] flex flex-col pb-16 md:pb-0 font-sans overflow-hidden">
       <header className="bg-white border-b px-6 py-2 flex items-center justify-between sticky top-0 z-[60] print:hidden shadow-sm h-12">
@@ -287,10 +414,9 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
         </button>
       </header>
 
-      {/* Ajuste crítico: Remove height 100vh na impressão para permitir rolagem de páginas */}
       <div className="flex flex-1 overflow-hidden relative print:overflow-visible print:block print:h-auto h-[calc(100vh-3rem)]">
         <aside className={`${mobileView === 'FORM' ? 'block' : 'hidden'} md:block w-full md:w-[360px] border-r bg-white overflow-y-auto p-6 md:p-7 scrollbar-none shadow-xl z-10 shrink-0 print:hidden`}>
-          {type === 'PF_BUNDLE' ? renderFormPF() : renderFormPJ()}
+          {renderForm()}
           <div className="md:hidden mt-10">
             <button onClick={() => setMobileView('PREVIEW')} className="w-full py-4 bg-black text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center">
               <Eye className="w-4 h-4 mr-2" /> Visualizar Documento
@@ -298,19 +424,20 @@ const Editor: React.FC<EditorProps> = ({ type, onBack, onSaveToHistory }) => {
           </div>
         </aside>
 
-        {/* Ajuste crítico: print:block e print:h-auto para o container principal */}
         <main className={`${mobileView === 'PREVIEW' ? 'flex' : 'hidden md:flex'} flex-1 bg-gray-100 overflow-y-auto p-4 md:p-10 flex-col items-center print:bg-white print:p-0 print:block print:h-auto print:w-full print:static`}>
-          <div className="mb-8 bg-white/80 backdrop-blur-md p-1 rounded-xl border border-gray-100 flex items-center shadow-lg w-full max-w-sm overflow-x-auto shrink-0 sticky top-0 z-10 print:hidden">
-            {['Honorários', 'Procuração', 'Hipo'].map((tab, idx) => (
-              <button key={tab} onClick={() => setActiveTab(idx)} className={`flex-1 px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all tracking-widest ${activeTab === idx ? 'bg-black text-white shadow-md' : 'text-gray-400 hover:bg-gray-50'}`}>
-                {tab}
-              </button>
-            ))}
-          </div>
+          {type !== 'PARTNERSHIP' && (
+            <div className="mb-8 bg-white/80 backdrop-blur-md p-1 rounded-xl border border-gray-100 flex items-center shadow-lg w-full max-w-sm overflow-x-auto shrink-0 sticky top-0 z-10 print:hidden">
+              {['Honorários', 'Procuração', 'Hipo'].map((tab, idx) => (
+                <button key={tab} onClick={() => setActiveTab(idx)} className={`flex-1 px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all tracking-widest ${activeTab === idx ? 'bg-black text-white shadow-md' : 'text-gray-400 hover:bg-gray-50'}`}>
+                  {tab}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="w-full flex justify-center items-start pb-32 print:pb-0">
              <PDFPreview 
-                type={activeTab === 0 ? (type === 'PJ_BUNDLE' ? 'PJ_HONORARIOS' : 'PF_HONORARIOS') : activeTab === 1 ? (type === 'PJ_BUNDLE' ? 'PJ_PROCURACAO' : 'PF_PROCURACAO') : 'PF_HIPO'} 
-                data={type === 'PF_BUNDLE' ? formDataPF : formDataPJ} 
+                type={getPDFPreviewType()} 
+                data={getFormData()} 
                 zoom={zoom} 
              />
           </div>

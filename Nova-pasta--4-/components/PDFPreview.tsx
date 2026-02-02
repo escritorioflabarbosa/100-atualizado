@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MapPin, Phone, Mail, Globe } from 'lucide-react';
+import { ClientData } from '../types.ts';
 
 interface PDFPreviewProps {
   type: 'PF_HONORARIOS' | 'PF_PROCURACAO' | 'PF_HIPO' | 'PJ_HONORARIOS' | 'PJ_PROCURACAO' | 'PARTNERSHIP';
@@ -49,6 +50,15 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
   const replace = (text: string) => {
     if (!text) return "";
     let result = text;
+    
+    // Partnership special replacements
+    if (type === 'PARTNERSHIP') {
+        if (text.includes('/LISTA_CLIENTES/')) {
+            const clientListHtml = data.clientes?.map((c: ClientData) => `<li><strong>${c.nome || 'Não informado'}</strong> (CPF: ${c.cpf || 'Não informado'})</li>`).join('') || '<li>Nenhum cliente listado.</li>';
+            result = result.replace('/LISTA_CLIENTES/', `<ul class="list-disc pl-5 my-2 text-left">${clientListHtml}</ul>`);
+        }
+    }
+
     const mappings: Record<string, string> = {
       '/NOME/': data.nome || '________________',
       '/NOME DA EMPRESA/': data.razaoSocial || '________________',
@@ -87,6 +97,14 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       '/DIA/': data.data?.split('-')[2] || new Date().getDate().toString().padStart(2, '0'),
       '/MÊS/': data.data?.split('-')[1] || (new Date().getMonth() + 1).toString().padStart(2, '0'),
       '/ANO/': data.data?.split('-')[0] || new Date().getFullYear().toString(),
+      // Partnership placeholders
+      '/GESTOR/': data.gestor || '________________',
+      '/PARCEIRO/': data.parceiro || '________________',
+      '/OAB_PARCEIRO/': data.oabParceiro || '________________',
+      '/TIPO_ACAO/': data.tipoAcao || '________________',
+      '/PERCENTUAL/': data.percentual || '________________',
+      '/ESTADO_ASSINATURA/': data.estadoAssinatura || '________________',
+      '/DATA_ASSINATURA/': formatDateString(data.dataAssinatura),
     };
     Object.entries(mappings).forEach(([placeholder, value]) => {
       const displayValue = `<strong>${value}</strong>`;
@@ -142,9 +160,10 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
 
   const Watermark = () => (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
-       <div className="font-contract font-bold text-[400px] text-gray-100 opacity-60 leading-none select-none flex items-center justify-center transform -translate-y-10">
+       {/* Reduced font size slightly to prevent overflow issues that might cause zoom feeling */}
+       <div className="font-contract font-bold text-[300px] text-gray-100 opacity-60 leading-none select-none flex items-center justify-center transform -translate-y-10">
           <span className="text-[#e5e7eb]">f</span>
-          <span className="text-[#e5e7eb] -ml-20">B</span>
+          <span className="text-[#e5e7eb] -ml-16">B</span>
        </div>
     </div>
   );
@@ -202,18 +221,19 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
 
   const Signatures: React.FC<{ outorganteLabel?: string }> = ({ outorganteLabel = 'OUTORGANTE' }) => (
     <div className="mt-12 text-center space-y-8 relative z-10">
-        <p className="font-medium text-[11px] uppercase" dangerouslySetInnerHTML={{ __html: replace('/ESTADO/, /DIA/ de /MÊS/ de /ANO/.') }} />
+        <p className="font-medium text-[11px] uppercase" dangerouslySetInnerHTML={{ __html: type === 'PARTNERSHIP' ? replace('/ESTADO_ASSINATURA/, /DATA_ASSINATURA/.') : replace('/ESTADO/, /DIA/ de /MÊS/ de /ANO/.') }} />
         
         <div className="flex flex-col items-center pt-4 space-y-8">
           <div className="text-center space-y-1 w-full max-w-sm">
             <div className="border-b border-black w-full mb-1"></div>
-            <p className="text-[11px] font-bold uppercase" dangerouslySetInnerHTML={{ __html: replace(type.includes('PJ') ? '/NOME DA EMPRESA/' : '/NOME/') }}></p>
-            <p className="text-[9px] text-gray-600 font-bold uppercase">({outorganteLabel})</p>
+            <p className="text-[11px] font-bold uppercase" dangerouslySetInnerHTML={{ __html: replace(type.includes('PJ') ? '/NOME DA EMPRESA/' : (type === 'PARTNERSHIP' ? '/PARCEIRO/' : '/NOME/')) }}></p>
+            <p className="text-[9px] text-gray-600 font-bold uppercase">({type === 'PARTNERSHIP' ? 'PARCEIRO' : outorganteLabel})</p>
           </div>
 
           <div className="text-center space-y-1 w-full max-w-sm">
-             <div className="text-[11px] font-black uppercase text-black">FLAFSON BORGES BARBOSA</div>
-             <p className="text-[9px] text-black font-bold uppercase">OAB/RJ 213.777</p>
+             <div className="border-b border-black w-full mb-1"></div>
+             <div className="text-[11px] font-black uppercase text-black">{type === 'PARTNERSHIP' ? data.gestor : 'FLAFSON BORGES BARBOSA'}</div>
+             <p className="text-[9px] text-black font-bold uppercase">{type === 'PARTNERSHIP' ? 'GESTOR' : 'OAB/RJ 213.777'}</p>
           </div>
         </div>
     </div>
@@ -307,6 +327,31 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
        addP('<strong>DECLARO</strong>, para os devidos fins e sob as penas da lei, que não possuo condições financeiras de arcar com as custas processuais e honorários advocatícios sem prejuízo do meu próprio sustento e de minha família, razão pela qual requeiro os benefícios da justiça gratuita, nos termos do artigo 98 do Código de Processo Civil.');
        addP('Por ser expressão da verdade, firmo a presente declaração.');
        blocks.push({ type: 'SIGNATURES', cost: 180 });
+    } else if (type === 'PARTNERSHIP') {
+      blocks.push({ type: 'HEADER', content: 'CONTRATO DE PARCERIA E DIVISÃO DE HONORÁRIOS', cost: 60 });
+      addP('Pelo presente instrumento particular, de um lado, como <strong>GESTOR</strong>, <strong>/GESTOR/</strong>, advogado regularmente inscrito na OAB/RJ sob o nº 213.777, e de outro lado, como <strong>PARCEIRO</strong>, <strong>/PARCEIRO/</strong>, advogado(a) inscrito(a) na OAB sob o nº <strong>/OAB_PARCEIRO/</strong>, celebram o presente Contrato de Parceria para Atuação Conjunta, que se regerá pelas seguintes cláusulas e condições:');
+      
+      addTitle('DO OBJETO');
+      addP('Cláusula 1ª. O objeto deste contrato é a atuação conjunta e a consequente divisão de honorários advocatícios nos processos judiciais e/ou extrajudiciais relacionados aos seguintes clientes:');
+      addP('/LISTA_CLIENTES/');
+      addP('Parágrafo Único. A atuação conjunta abrangerá a Ação de <strong>/TIPO_ACAO/</strong>, incluindo todas as fases processuais necessárias para a sua conclusão.');
+      
+      addTitle('DA DIVISÃO DE HONORÁRIOS');
+      addP('Cláusula 2ª. Fica acordado que os honorários advocatícios contratuais e de sucumbência advindos do êxito nas causas descritas na Cláusula 1ª serão divididos da seguinte forma: <strong>/PERCENTUAL/</strong>.');
+      addP('Parágrafo Primeiro. As despesas processuais, custas e demais encargos serão rateados na mesma proporção dos honorários, salvo acordo diverso por escrito.');
+      addP('Parágrafo Segundo. A apuração e o repasse dos valores devidos ao PARCEIRO deverão ocorrer em até 10 (dez) dias úteis após o efetivo recebimento dos honorários pelo GESTOR.');
+
+      addTitle('DAS OBRIGAÇÕES');
+      addP('Cláusula 3ª. Compete a ambas as partes atuar com zelo e dedicação, mantendo comunicação constante sobre o andamento dos processos, compartilhando informações e documentos relevantes para o bom desempenho do mandato.');
+
+      addTitle('DO PRAZO E RESCISÃO');
+      addP('Cláusula 4ª. O presente contrato vigorará enquanto perdurarem os processos objeto da parceria. Poderá ser rescindido por qualquer das partes, mediante notificação prévia de 30 dias, garantindo-se a remuneração pelos serviços efetivamente prestados até a data da rescisão.');
+      
+      addTitle('DO FORO');
+      addP('Cláusula 5ª. As partes elegem o foro da Comarca do Rio de Janeiro/RJ para dirimir quaisquer litígios oriundos deste contrato.');
+      addP('E, por estarem justos e contratados, assinam o presente instrumento em duas vias de igual teor e forma.');
+
+      blocks.push({ type: 'SIGNATURES', cost: 200 });
     }
 
     return blocks;
@@ -340,11 +385,6 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
         paginated.push(currentPage);
         currentPage = [];
         currentHeight = 0;
-        // Nova página precisa de espaço para header se não for a primeira? 
-        // No design, header repete? Geralmente sim.
-        // Adicionando custo virtual de header em nova página
-        // currentPage.push({ type: 'SPACER', cost: 150 });
-        // currentHeight += 150;
       }
       currentPage.push(block);
       currentHeight += block.cost;
@@ -363,6 +403,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({ type, data, zoom, manualOverrid
       <div 
         className="print-container relative"
         style={{ 
+          // No modo print, ignoramos o width calculado pelo JS e usamos CSS para 100%/210mm
           width: `${A4_WIDTH_PX * finalScale}px`, 
         }}
       >

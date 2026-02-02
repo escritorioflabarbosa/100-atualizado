@@ -36,7 +36,7 @@
         background: white;
         width: 210mm;
         height: 297mm; 
-        padding: 15mm 20mm; /* Ajustado padding lateral para 20mm */
+        padding: 15mm 20mm; 
         position: relative;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         margin-bottom: 30px;
@@ -54,7 +54,7 @@
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
-        z-index: 10; /* Texto acima da marca d'água */
+        z-index: 10; 
       }
       
       @media print {
@@ -63,8 +63,14 @@
           margin: 0; 
         }
         
+        html {
+          font-size: 11px; /* Base font size fix */
+        }
+
         html, body {
           width: 210mm;
+          min-width: 210mm;
+          max-width: 210mm;
           height: auto !important;
           margin: 0 !important;
           padding: 0 !important;
@@ -82,29 +88,36 @@
         #root, #root > div, main, .print-container {
           display: block !important;
           position: static !important;
-          width: 100% !important;
+          width: 210mm !important;
+          max-width: 210mm !important;
           height: auto !important;
           overflow: visible !important;
           background: white !important;
           margin: 0 !important;
           padding: 0 !important;
           transform: none !important;
+          left: 0 !important;
+          top: 0 !important;
         }
 
         .sheet {
           width: 210mm !important;
-          height: 297mm !important; /* Força altura A4 exata por página */
+          max-width: 210mm !important;
+          height: 297mm !important;
+          max-height: 297mm !important;
           margin: 0 !important;
-          padding: 15mm 20mm !important;
+          padding: 15mm 20mm !important; /* Mantém padding interno */
           border: none !important;
           box-shadow: none !important;
           transform: none !important;
           page-break-after: always !important;
           break-after: page !important;
+          page-break-inside: avoid !important;
           position: relative !important;
           display: flex !important;
           flex-direction: column !important;
           justify-content: space-between !important;
+          overflow: hidden !important; /* Corta overflow se houver */
         }
         
         .sheet:last-child {
@@ -115,6 +128,14 @@
         p {
           text-align: justify !important;
           color: black !important;
+          font-size: 11px !important; /* Força tamanho de fonte legível */
+          line-height: 1.4 !important;
+        }
+        
+        /* Ajuste de escala específico para evitar zoom excessivo em alguns navegadores */
+        body {
+            transform: scale(1);
+            transform-origin: top left;
         }
       }
     </style>
